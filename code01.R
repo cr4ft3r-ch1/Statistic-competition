@@ -10,11 +10,63 @@ ggplot2::ggplot(panel_data_pre, aes(x = new_year, y = log(pre_education_expences
   facet_wrap( ~ region )
 
 ggplot2::ggplot(panel_data_muni, aes(x = year, y = log(education_expences_perstudents), color = prefecture)) +
-  ylim(c(9,40)) +
   geom_line() +
   geom_point() +
   theme_minimal() +
   labs(title = "地域別の推移", x = "年度", y = "値")
+#差分を計算する
+library(dplyr)
+
+ggplot2::ggplot(diff_data, aes(x = new_year, y = diff_student, color = prefecture)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "地域別の推移", x = "年度", y = "値")+
+  facet_wrap( ~ region )
+
+
+
+
+library(dplyr)
+library(ggplot2)
+library(patchwork) # グラフを横に並べるためのパッケージ（未インストールの場合は install.packages("patchwork")）
+
+# 1. 全期間の総合平均を計算
+overall_mean <- mean(panel_data_muni$education_expences_perstudents, na.rm = TRUE)
+
+# 2. 時間固定効果を除去した新しい列を作成
+plot_data <- panel_data_muni |>
+  # 必ず「年（year）」でグループ化する
+  dplyr::group_by(new_year) |>
+  dplyr::mutate(
+    # その年の全国平均を計算
+    year_mean = mean(education_expences_perstudents, na.rm = TRUE),
+    
+    # 時間固定効果を除去（元の値 - 年平均 + 全体平均）
+    edu_exp_adjusted = education_expences_perstudents - year_mean + overall_mean
+  ) |>
+  dplyr::ungroup()
+
+# 3. グラフ描画（Before / After の比較）
+
+# Before: 元のデータ（右肩上がりのマクロトレンドが見えるはず）
+plot_before <- ggplot(plot_data, aes(x = factor(new_year), y = education_expences_perstudents)) +
+  geom_boxplot(fill = "lightpink", outlier.shape = NA) + # 外れ値は非表示にして箱を見やすくする
+  coord_cartesian(ylim = quantile(plot_data$education_expences_perstudents, c(0.05, 0.95), na.rm=TRUE)) + # 上下5%をカットしてズーム
+  theme_minimal() +
+  labs(title = "Before: 元の1人当たり教育費", x = "年度", y = "1人当たり教育費")
+
+# After: 時間固定効果除去後（トレンドが平坦化され、純粋な分散だけが残るはず）
+plot_after <- ggplot(plot_data, aes(x = factor(year), y = edu_exp_adjusted)) +
+  geom_boxplot(fill = "lightblue", outlier.shape = NA) +
+  coord_cartesian(ylim = quantile(plot_data$edu_exp_adjusted, c(0.05, 0.95), na.rm=TRUE)) +
+  theme_minimal() +
+  labs(title = "After: 時間固定効果 除去後", x = "年度", y = "調整後 1人当たり教育費")
+
+# patchworkを使って左右に並べて表示
+plot_before + plot_after
+
+
 
 
 

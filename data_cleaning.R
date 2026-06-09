@@ -154,7 +154,11 @@ f_muni <- function(x) {
     ) |>
     dplyr::relocate(metro_area, .after = region) |> 
     dplyr::mutate(
-      education_expences_perstudents = education_expense / (student_number)
+      education_expences_perstudents = if_else(
+        student_number == 0, 
+        NA_real_,
+        education_expense / (student_number)
+    )
     )
 }
 
@@ -211,10 +215,25 @@ panel_data_pre <- panel_data_muni |>
   ) |>
   dplyr::relocate(metro_area, .after = region)|>
   dplyr::mutate(
-    pre_education_expences_perstudents = pre_education_expense / (pre_elementary_school_students + pre_junior_high_school_students + pre_high_school_students)
+    pre_education_expences_perstudents = pre_education_expense / pre_student_number
   )
 
-
+# final_data は前回作成した縦持ち(Long型)のパネルデータと仮定
+diff_data <- panel_data_pre |>
+  # 1. 必ず地域（市区町村や都道府県）ごとにグループ化する
+  dplyr::group_by(prefecture) |>
+  # 2. 年度順に昇順で並び替える（.by_group = TRUE でグループ内ソート）
+  dplyr::arrange(new_year, .by_group = TRUE) |>
+  dplyr::mutate(
+    # 単純差分（今年の生徒数 - 昨年の生徒数）
+    diff_student = pre_student_number - dplyr::lag(pre_student_number),
+    
+    # 対数差分による変化率の計算
+    # log() を用いることで、計量経済学的に扱いやすい変化率になる
+    log_diff_student = log(pre_student_number) - log(dplyr::lag(pre_student_number))
+  ) |>
+  # 3. グループ化を解除して安全な状態に戻す
+  dplyr::ungroup()
 
 
 
