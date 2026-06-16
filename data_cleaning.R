@@ -18,6 +18,7 @@ library(rnaturalearthdata)
 #   skip = 2
 # )|> dplyr::mutate(year = 2018,
 #                   education_year = 2015)
+
 data_2019 <- read_csv(
   "SSDSE-A-2019.csv",
   locale = locale(encoding = "CP932"),
@@ -91,7 +92,7 @@ data_2020_merged <- add_student_number(data_2024,data_2022)
 data_2019_merged <- add_student_number(data_2023,data_2021)
 data_2018_merged <- add_student_number(data_2021,data_2020)
 data_2017_merged <- add_student_number(data_2020,data_2019)
-data_2016_merged <- add_student_number(data_2019,data_2018)
+#data_2016_merged <- add_student_number(data_2019,data_2018)
 
 
 
@@ -163,9 +164,10 @@ f_muni <- function(x) {
 }
 
 # 縦方向への結合後に、整形関数を一括適用する
-panel_data_muni <- bind_rows(data_2016_merged, data_2017_merged,data_2018_merged, data_2019_merged, data_2020_merged,data_2021_merged) |> 
+#panel_data_muni <- bind_rows(data_2016_merged, data_2017_merged,data_2018_merged, data_2019_merged, data_2020_merged,data_2021_merged) |> 
+#  f_muni()
+panel_data_muni <- bind_rows(data_2017_merged,data_2018_merged, data_2019_merged, data_2020_merged,data_2021_merged) |> 
   f_muni()
-
 # 県で分ける
 panel_data_pre <- panel_data_muni |> 
   dplyr::group_by(prefecture,new_year) |> 
