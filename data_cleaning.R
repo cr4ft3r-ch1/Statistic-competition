@@ -76,7 +76,7 @@ add_student_number <- function(base_data, target_year_data) {
   # 必要な列だけを計算して切り出す
   clean_target_data <- target_year_data |> 
     dplyr::mutate(student_number = 小学校児童数 + 中学校生徒数 + 高等学校生徒数) |> 
-    dplyr::select(地域コード, student_number)
+    dplyr::select(地域コード, student_number, )
   
   # ベースとなるデータに結合して返す
   result_data <- base_data |> 
@@ -238,5 +238,28 @@ diff_data <- panel_data_pre |>
   dplyr::ungroup()
 
 
+
+
+
+
+
+# data_2021のところにこれを貼り付けておいてください。人口を足すやつです。
+
+# 1. 住基人口データの読み込みとコードの抽出・加工
+pop_data <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
+  dplyr::mutate(
+    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
+    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+  ) |>
+  dplyr::select(
+    "地域コード", 
+    "Population" = `人`  # 列名は「人」
+  )
+
+
+
+# 3. データの結合（一致する行のみ残す）
+ kari<- data_2021 |>
+  dplyr::inner_join(pop_data, by = "地域コード")
 
 
