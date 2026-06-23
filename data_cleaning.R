@@ -194,9 +194,6 @@ f_muni <- function(x) {
       junior_high_school_count = `中学校数`,
       junior_high_school_teachers = `中学校教員数`,
       junior_high_school_students = `中学校生徒数`,
-      comp_school_teachers = 義務教育学校教員数,
-      comp_school_lower_students = 義務教育学校前期課程児童数,
-      comp_school_upper_students = 義務教育学校後期課程生徒数,
       high_school_count = `高等学校数`,
       high_school_students = `高等学校生徒数`
     ) |> 
