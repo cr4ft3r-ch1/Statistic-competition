@@ -69,6 +69,8 @@ pop_data_2021 <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
   )
 
 # 本データの読み込み
+
+
 # data_2018 <- read_csv(
 #   "SSDSE-A-2018.csv",
 #   locale = locale(encoding = "CP932"),
@@ -138,7 +140,7 @@ add_student_number <- function(base_data, target_year_data) {
   
   # 必要な列だけを計算して切り出す
   clean_target_data <- target_year_data |> 
-    dplyr::mutate(student_number = 小学校児童数 + 中学校生徒数 + 高等学校生徒数) |> 
+    dplyr::mutate(student_number = 小学校児童数 + 中学校生徒数) |> 
     dplyr::select(地域コード, student_number)
   
   # ベースとなるデータに結合して返す
@@ -192,6 +194,9 @@ f_muni <- function(x) {
       junior_high_school_count = `中学校数`,
       junior_high_school_teachers = `中学校教員数`,
       junior_high_school_students = `中学校生徒数`,
+      comp_school_teachers = 義務教育学校教員数,
+      comp_school_lower_students = 義務教育学校前期課程児童数,
+      comp_school_upper_students = 義務教育学校後期課程生徒数,
       high_school_count = `高等学校数`,
       high_school_students = `高等学校生徒数`
     ) |> 
