@@ -4,13 +4,14 @@
 #install.packages("rnaturalearth")
 #install.packages("rnaturalearthdata")
 #install.packages("maps")
+#install.packages("GGally")
 library(tidyverse)
 library(readr)
 library(modelsummary)
 library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
-
+library(GGally)
 
 # 1. 住基人口データの読み込みとコードの抽出・加工
 pop_data_2016 <- read_csv("市区町村別人口_2016.csv", skip = 3)|>
@@ -20,7 +21,7 @@ pop_data_2016 <- read_csv("市区町村別人口_2016.csv", skip = 3)|>
   ) |>
   dplyr::select(
     "地域コード", 
-    "Population" = `人`  # 列名は「人」
+    "population" = `人`  # 列名は「人」
   )
 pop_data_2017 <- read_csv("市区町村別人口_2017.csv", skip = 3)|>
   dplyr::mutate(
@@ -29,7 +30,7 @@ pop_data_2017 <- read_csv("市区町村別人口_2017.csv", skip = 3)|>
   ) |>
   dplyr::select(
     "地域コード", 
-    "Population" = `人`  # 列名は「人」
+    "population" = `人`  # 列名は「人」
   )
 pop_data_2018 <- read_csv("市区町村別人口_2018.csv", skip = 3)|>
   dplyr::mutate(
@@ -38,7 +39,7 @@ pop_data_2018 <- read_csv("市区町村別人口_2018.csv", skip = 3)|>
   ) |>
   dplyr::select(
     "地域コード", 
-    "Population" = `人`  # 列名は「人」
+    "population" = `人`  # 列名は「人」
   )
 pop_data_2019 <- read_csv("市区町村別人口_2019.csv", skip = 3)|>
   dplyr::mutate(
@@ -47,7 +48,7 @@ pop_data_2019 <- read_csv("市区町村別人口_2019.csv", skip = 3)|>
   ) |>
   dplyr::select(
     "地域コード", 
-    "Population" = `人`  # 列名は「人」
+    "population" = `人`  # 列名は「人」
   )
 pop_data_2020 <- read_csv("市区町村別人口_2020.csv", skip = 3)|>
   dplyr::mutate(
@@ -56,7 +57,7 @@ pop_data_2020 <- read_csv("市区町村別人口_2020.csv", skip = 3)|>
   ) |>
   dplyr::select(
     "地域コード", 
-    "Population" = `人`  # 列名は「人」
+    "population" = `人`  # 列名は「人」
   )
 pop_data_2021 <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
   dplyr::mutate(
@@ -65,7 +66,7 @@ pop_data_2021 <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
   ) |>
   dplyr::select(
     "地域コード", 
-    "Population" = `人`  # 列名は「人」
+    "population" = `人`  # 列名は「人」
   )
 
 # 本データの読み込み
@@ -170,7 +171,7 @@ data_2017_merged <- add_student_number(data_2020,data_2019)
 f_muni <- function(x) {
   x |> 
     dplyr::select(
-      new_year, year, student_number,# 追加: 結合時に付与した年度列を残す
+      population,new_year, year, student_number,teacher_number,# 追加: 結合時に付与した年度列を残す
       "地域コード":"市区町村",
       "経常収支比率（市町村財政）":"高等学校生徒数"
     ) |> 
@@ -283,7 +284,11 @@ panel_data_pre <- panel_data_muni |>
   ) |>
   dplyr::relocate(metro_area, .after = region)|>
   dplyr::mutate(
-    pre_education_expences_perstudents = pre_education_expense / pre_student_number
+    pre_education_expences_perstudents = pre_education_expense / pre_student_number,
+    metro_dummy = dplyr::case_when(
+      metro_area %in% "地方圏" ~ 0,
+      TRUE ~ 1
+    )
   )
 
 # final_data は前回作成した縦持ち(Long型)のパネルデータと仮定
