@@ -25,21 +25,24 @@ data_2019 <- read_csv(
   skip = 2
 )|> dplyr::mutate(year = 2019,
                   education_year = 2016,
-                  student_year = 2017)
+                  student_year = 2017)|>
+  dplyr::inner_join(pop_data_2016, by = "地域コード")
 data_2020 <- read_csv(
   "SSDSE-A-2020.csv",
   locale = locale(encoding = "CP932"),
   skip = 2
 )|> dplyr::mutate(year = 2020,
                   education_year = 2017,
-                  student_year = 2018)
+                  student_year = 2018)|>
+  dplyr::inner_join(pop_data_2017, by = "地域コード")
 data_2021 <- read_csv(
   "SSDSE-A-2021.csv",
   locale = locale(encoding = "CP932"),
   skip = 2
 )|> dplyr::mutate(year = 2021,
                   education_year = 2018,
-                  student_year = 2019)
+                  student_year = 2019)|>
+  dplyr::inner_join(pop_data_2018, by = "地域コード")
 data_2022 <- read_csv(
   "SSDSE-A-2022.csv",
   locale = locale(encoding = "CP932"),
@@ -52,14 +55,16 @@ data_2023 <- read_csv(
   skip = 2
 )|> dplyr::mutate(year = 2023,
                   education_year = 2019,
-                  student_year = 2021)
+                  student_year = 2021)|>
+  dplyr::inner_join(pop_data_2019, by = "地域コード")
 data_2024 <- read_csv(
   "SSDSE-A-2024.csv",
   locale = locale(encoding = "CP932"),
   skip = 2
 )|> dplyr::mutate(year = 2024,
                   education_year = 2020,
-                  student_year = 2022)
+                  student_year = 2022)|>
+  dplyr::inner_join(pop_data_2020, by = "地域コード")
 
 data_2025 <- read_csv(
   "SSDSE-A-2025.csv",
@@ -67,7 +72,8 @@ data_2025 <- read_csv(
   skip = 2
 )|> dplyr::mutate(year = 2025,
                   education_year = 2021,
-                  student_year = 2023)
+                  student_year = 2023)|>
+  dplyr::inner_join(pop_data_2021, by = "地域コード")
 
 
 # 関数の定義（パッケージ化）
@@ -246,7 +252,7 @@ diff_data <- panel_data_pre |>
 # data_2021のところにこれを貼り付けておいてください。人口を足すやつです。
 
 # 1. 住基人口データの読み込みとコードの抽出・加工
-pop_data <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
+pop_data_2021 <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
   dplyr::mutate(
     # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
     "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
@@ -257,9 +263,49 @@ pop_data <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
   )
 
 
+pop_data_2020 <- read_csv("市区町村別人口_2020.csv", skip = 3)|>
+  dplyr::mutate(
+    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
+    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+  ) |>
+  dplyr::select(
+    "地域コード", 
+    "Population" = `人`  # 列名は「人」
+  )
 
-# 3. データの結合（一致する行のみ残す）
- kari<- data_2021 |>
-  dplyr::inner_join(pop_data, by = "地域コード")
-
-
+pop_data_2019 <- read_csv("市区町村別人口_2019.csv", skip = 3)|>
+  dplyr::mutate(
+    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
+    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+  ) |>
+  dplyr::select(
+    "地域コード", 
+    "Population" = `人`  # 列名は「人」
+  )
+pop_data_2018 <- read_csv("市区町村別人口_2018.csv", skip = 3)|>
+  dplyr::mutate(
+    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
+    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+  ) |>
+  dplyr::select(
+    "地域コード", 
+    "Population" = `人`  # 列名は「人」
+  )
+pop_data_2017 <- read_csv("市区町村別人口_2017.csv", skip = 3)|>
+  dplyr::mutate(
+    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
+    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+  ) |>
+  dplyr::select(
+    "地域コード", 
+    "Population" = `人`  # 列名は「人」
+  )
+pop_data_2016 <- read_csv("市区町村別人口_2016.csv", skip = 3)|>
+  dplyr::mutate(
+    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
+    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+  ) |>
+  dplyr::select(
+    "地域コード", 
+    "Population" = `人`  # 列名は「人」
+  )
