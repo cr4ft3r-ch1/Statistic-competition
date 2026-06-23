@@ -140,8 +140,9 @@ add_student_number <- function(base_data, target_year_data) {
   
   # 必要な列だけを計算して切り出す
   clean_target_data <- target_year_data |> 
-    dplyr::mutate(student_number = 小学校児童数 + 中学校生徒数) |> 
-    dplyr::select(地域コード, student_number)
+    dplyr::mutate(student_number = 小学校児童数 + 中学校生徒数,
+                  teacher_number = 小学校教員数 + 中学校教員数) |> 
+    dplyr::select(地域コード, student_number, teacher_number)
   
   # ベースとなるデータに結合して返す
   result_data <- base_data |> 
