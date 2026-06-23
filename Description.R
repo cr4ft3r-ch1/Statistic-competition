@@ -280,3 +280,41 @@ data_2025 <- raw_data_2025 |>
                 :"高等学校生徒数")
 
 getwd()
+
+# 相関を散布図で見る
+
+# ---------------------------------------------------------
+# 前準備：分析に投入する変数群に絞り込む（必須のプロセス）
+# 例として、data_mergedから目的変数(Y)と説明変数(X1, X2...)を抽出
+# ---------------------------------------------------------
+target_data <- panel_data_pre %>%
+  select(pre_teacher_number, pre_student_number, pre_population,pre_mean_ordinary_balance_ratio,pre_education_expences_perstudents) # 分析に使う変数を指定
+# 欠損値(NA)が含まれていると相関係数が計算できない場合があるため、
+# 必要に応じて tidyr::drop_na() 等で処理する
+
+
+# =========================================================
+# 選択肢1: GGally::ggpairs() 【推奨：情報量最大】
+# =========================================================
+# メリット: 下三角に散布図、対角線にヒストグラム、上三角に相関係数が表示され、ggplot2ベースで美しい。
+# デメリット: 変数が増えると描画処理が非常に重くなる。
+
+# 散布図マトリックスの描画
+ggpairs(target_data, 
+        title = "変数間の散布図マトリックスおよび相関係数",
+        lower = list(continuous = wrap("points", alpha = 0.5, size = 1))) # 点を半透明にして重なりを見やすくする
+
+
+#ここから回帰分析
+
+# 財的資源の地方格差
+model_1 <- estimatr::lm_robust(data = panel_data_pre, pre_education_expences_perstudents ~ metro_dummy + pre_population + pre_mean_ordinary_balance_ratio)
+
+summary(model_1)
+
+modelsummary(model_1)
+
+# 人口ではスケールが大きいので対数をとった
+model_2 <- estimatr::lm_robust(data = panel_data_pre, pre_education_expences_perstudents ~ metro_dummy + log(pre_population) + pre_mean_ordinary_balance_ratio)
+
+summary(model_2)
