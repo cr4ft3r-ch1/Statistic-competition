@@ -73,7 +73,6 @@ pop_data_2021 <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
 
 # 本データの読み込み
 
-
 # data_2018 <- read_csv(
 #   "SSDSE-A-2018.csv",
 #   locale = locale(encoding = "CP932"),
@@ -323,8 +322,25 @@ diff_data <- panel_data_pre |>
   # 3. グループ化を解除して安全な状態に戻す
   dplyr::ungroup()
 
+# 空間的な要素を足す
 
+# 1. Shapefileの読み込み
+# ※日本の公的機関（国土交通省やe-Stat）のデータは文字コードがShift-JIS(CP932)であることが多いため、エンコーディングを指定して文字化けを防ぐ。
+map_data <- sf::st_read("N03-20250101_14.shp", options = "ENCODING=CP932")
 
+# 2. 読み込んだデータの中身（列名）を確認する
+# ここで「市町村コード（5桁）」が入っている列の名前を特定する
+print(colnames(map_data))
+
+# 3. 【仮説】市町村コードの列名が "N03_007" だった場合の整形処理
+# ※国土数値情報のデータ等では "N03_007" や "KEY_CODE" といった列名になっていることが多い。実際の列名に合わせて変更すること。
+map_data_formatted <- map_data |>
+  dplyr::mutate(
+    # パネルデータ（final_panel_data）の仕様に合わせて、先頭に "R" を付与する
+    region_code = paste0("R", as.character(N03_007))
+  ) |>
+  # 必要な列（作成した region_code と、地図情報である geometry）だけを残して軽くする
+  dplyr::select(region_code, geometry)
 
 
 
