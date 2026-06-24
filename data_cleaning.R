@@ -5,13 +5,15 @@
 #install.packages("rnaturalearthdata")
 #install.packages("maps")
 #install.packages("GGally")
-library(tidyverse)
-library(readr)
+#install.packages("fixest")
+library(tidyverse)   
 library(modelsummary)
 library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(GGally)
+library(patchwork)
+library(fixest)
 
 # 1. 住基人口データの読み込みとコードの抽出・加工
 pop_data_2016 <- read_csv("市区町村別人口_2016.csv", skip = 3)|>
@@ -136,6 +138,19 @@ data_2025 <- read_csv(
   dplyr::inner_join(pop_data_2021, by = "地域コード")
 
 
+# # --- 年度ごとの設定を tibble で定義 ---
+# ssdse_config <- tibble::tribble(
+#   ~file_year, ~year, ~education_year, ~student_year, ~pop_year,
+#   2019,       2019,  2016,            2017,          "2016",
+#   2020,       2020,  2017,            2018,          "2017",
+#   2021,       2021,  2018,            2019,          "2018",
+#   2022,       2021,  NA,              2020,          NA,
+#   2023,       2023,  2019,            2021,          "2019",
+#   2024,       2024,  2020,            2022,          "2020",
+#   2025,       2025,  2021,            2023,          "2021"
+# )
+
+
 # 関数の定義（パッケージ化）
 add_student_number <- function(base_data, target_year_data) {
   
@@ -222,7 +237,7 @@ f_muni <- function(x) {
     ) |>
     dplyr::relocate(metro_area, .after = region) |> 
     dplyr::mutate(
-      education_expences_perstudents = if_else(
+      education_expenses_perstudents = if_else(
         student_number == 0, 
         NA_real_,
         education_expense / (student_number)
@@ -284,7 +299,7 @@ panel_data_pre <- panel_data_muni |>
   ) |>
   dplyr::relocate(metro_area, .after = region)|>
   dplyr::mutate(
-    pre_education_expences_perstudents = pre_education_expense / pre_student_number,
+    pre_education_expenses_perstudents = pre_education_expense / pre_student_number,
     metro_dummy = dplyr::case_when(
       metro_area %in% "地方圏" ~ 0,
       TRUE ~ 1

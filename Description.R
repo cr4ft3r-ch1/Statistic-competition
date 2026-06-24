@@ -2,14 +2,14 @@ source("data_cleaning.R")
 
 
 # 2. グラフの作成(折れ線グラフ)
-ggplot2::ggplot(panel_data_pre, aes(x = new_year, y = log(pre_education_expences_perstudents), color = prefecture)) +
+ggplot2::ggplot(panel_data_pre, aes(x = new_year, y = log(pre_education_expenses_perstudents), color = prefecture)) +
   geom_line() +
   geom_point() +
   theme_minimal() +
   labs(title = "地域別の推移", x = "年度", y = "値")+
   facet_wrap( ~ region )
 
-ggplot2::ggplot(panel_data_muni, aes(x = year, y = log(education_expences_perstudents), color = prefecture)) +
+ggplot2::ggplot(panel_data_muni, aes(x = year, y = log(education_expenses_perstudents), color = prefecture)) +
   geom_line() +
   geom_point() +
   theme_minimal() +
@@ -28,13 +28,8 @@ ggplot2::ggplot(diff_data, aes(x = new_year, y = diff_student, color = prefectur
 
 #　市区町村単位
 
-library(dplyr)
-library(ggplot2)
-library(patchwork) 
-#install.packages("patchwork")
-
 # 1. 全期間の総合平均を計算
-overall_mean <- mean(panel_data_muni$education_expences_perstudents, na.rm = TRUE)
+overall_mean <- mean(panel_data_muni$education_expenses_perstudents, na.rm = TRUE)
 
 # 2. 時間固定効果を除去した新しい列を作成
 plot_data <- panel_data_muni |>
@@ -42,19 +37,19 @@ plot_data <- panel_data_muni |>
   dplyr::group_by(new_year) |>
   dplyr::mutate(
     # その年の全国平均を計算
-    year_mean = mean(education_expences_perstudents, na.rm = TRUE),
+    year_mean = mean(education_expenses_perstudents, na.rm = TRUE),
     
     # 時間固定効果を除去（元の値 - 年平均 + 全体平均）
-    edu_exp_adjusted = education_expences_perstudents - year_mean + overall_mean
+    edu_exp_adjusted = education_expenses_perstudents - year_mean + overall_mean
   ) |>
   dplyr::ungroup()
 
 # 3. グラフ描画（Before / After の比較）
 
 # Before: 元のデータ（右肩上がりのマクロトレンドが見えるはず）
-plot_before <- ggplot(plot_data, aes(x = factor(new_year), y = education_expences_perstudents)) +
+plot_before <- ggplot(plot_data, aes(x = factor(new_year), y = education_expenses_perstudents)) +
   geom_boxplot(fill = "lightpink", outlier.shape = NA) + # 外れ値は非表示にして箱を見やすくする
-  coord_cartesian(ylim = quantile(plot_data$education_expences_perstudents, c(0.05, 0.95), na.rm=TRUE)) + # 上下5%をカットしてズーム
+  coord_cartesian(ylim = quantile(plot_data$education_expenses_perstudents, c(0.05, 0.95), na.rm=TRUE)) + # 上下5%をカットしてズーム
   labs(title = "Before: 元の1人当たり教育費", x = "年度", y = "1人当たり教育費")
 
 # After: 時間固定効果除去後（トレンドが平坦化され、純粋な分散だけが残るはず）
@@ -72,7 +67,7 @@ plot_before + plot_after
 
 # 県単位
 # 1. 全期間の総合平均を計算
-overall_mean <- mean(panel_data_pre$pre_education_expences_perstudents, na.rm = TRUE)
+overall_mean <- mean(panel_data_pre$pre_education_expenses_perstudents, na.rm = TRUE)
 
 # 2. 時間固定効果を除去した新しい列を作成
 plot_data <- panel_data_pre |>
@@ -80,19 +75,19 @@ plot_data <- panel_data_pre |>
   dplyr::group_by(new_year) |>
   dplyr::mutate(
     # その年の全国平均を計算
-    year_mean = mean(pre_education_expences_perstudents, na.rm = TRUE),
+    year_mean = mean(pre_education_expenses_perstudents, na.rm = TRUE),
     
     # 時間固定効果を除去（元の値 - 年平均 + 全体平均）
-    pre_edu_exp_adjusted = pre_education_expences_perstudents - year_mean + overall_mean
+    pre_edu_exp_adjusted = pre_education_expenses_perstudents - year_mean + overall_mean
   ) |>
   dplyr::ungroup()
 
 # 3. グラフ描画（Before / After の比較）
 
 # Before: 元のデータ（右肩上がりのマクロトレンドが見えるはず）
-plot_before <- ggplot(plot_data, aes(x = factor(new_year), y = pre_education_expences_perstudents)) +
+plot_before <- ggplot(plot_data, aes(x = factor(new_year), y = pre_education_expenses_perstudents)) +
   geom_boxplot(fill = "lightpink", outlier.shape = NA) + # 外れ値は非表示にして箱を見やすくする
-  #coord_cartesian(ylim = quantile(plot_data$education_expences_perstudents, c(0.05, 0.95), na.rm=TRUE)) + # 上下5%をカットしてズーム
+  #coord_cartesian(ylim = quantile(plot_data$education_expenses_perstudents, c(0.05, 0.95), na.rm=TRUE)) + # 上下5%をカットしてズーム
   coord_cartesian(ylim = c(350, 900)) +
   theme_minimal() +
   labs(title = "Before: 元の1人当たり教育費", x = "年度", y = "1人当たり教育費")
@@ -187,13 +182,13 @@ plot(education_rate_vs_total_by_metro_area)
 #生徒1人当たりの教育費をまとめた列を作る
 data_2023 <- data_2023 |>
  dplyr::mutate(
-   pre_education_expences_perstudents = (pre_education_expense)/(pre_elementary_school_students +  pre_junior_high_school_students + pre_high_school_students))
+   pre_education_expenses_perstudents = (pre_education_expense)/(pre_elementary_school_students +  pre_junior_high_school_students + pre_high_school_students))
 
 # 教育費の割合 地方別
 education_perstudent_vs_total_by_region <-ggplot2::ggplot()+
   ggplot2::geom_point(data=data_2023,
                       mapping = aes(x = log(pre_total_expenditure) ,
-                                    y = pre_education_expences_perstudents,
+                                    y = pre_education_expenses_perstudents,
                                     color =region) )
 
 plot(education_perstudent_vs_total_by_region)
@@ -201,7 +196,7 @@ plot(education_perstudent_vs_total_by_region)
 education_perstudent_vs_total_by_region2 <-ggplot2::ggplot()+
   ggplot2::geom_point(data=data_2023,
                       mapping = aes(x = log(pre_total_expenditure) ,
-                                    y = pre_education_expences_perstudents,
+                                    y = pre_education_expenses_perstudents,
                                     color =region) )+ 
   facet_wrap( ~ region )
 plot(education_perstudent_vs_total_by_region2)
@@ -288,7 +283,7 @@ getwd()
 # 例として、data_mergedから目的変数(Y)と説明変数(X1, X2...)を抽出
 # ---------------------------------------------------------
 target_data <- panel_data_pre %>%
-  select(pre_teacher_number, pre_student_number, pre_population,pre_mean_ordinary_balance_ratio,pre_education_expences_perstudents) # 分析に使う変数を指定
+  select(pre_teacher_number, pre_student_number, pre_population,pre_mean_ordinary_balance_ratio,pre_education_expenses_perstudents) # 分析に使う変数を指定
 # 欠損値(NA)が含まれていると相関係数が計算できない場合があるため、
 # 必要に応じて tidyr::drop_na() 等で処理する
 
@@ -308,13 +303,23 @@ ggpairs(target_data,
 #ここから回帰分析
 
 # 財的資源の地方格差
-model_1 <- estimatr::lm_robust(data = panel_data_pre, pre_education_expences_perstudents ~ metro_dummy + pre_population + pre_mean_ordinary_balance_ratio)
+model_1 <- estimatr::lm_robust(data = panel_data_pre, pre_education_expenses_perstudents ~ metro_dummy + pre_population + pre_mean_ordinary_balance_ratio)
 
 summary(model_1)
 
 modelsummary(model_1)
 
 # 人口ではスケールが大きいので対数をとった
-model_2 <- estimatr::lm_robust(data = panel_data_pre, pre_education_expences_perstudents ~ metro_dummy + log(pre_population) + pre_mean_ordinary_balance_ratio)
+model_2 <- estimatr::lm_robust(data = panel_data_pre, pre_education_expenses_perstudents ~ metro_dummy + log(pre_population) + pre_mean_ordinary_balance_ratio)
 
 summary(model_2)
+
+# 時系列のトレンドを除去した固定効果を含める
+model_3 <- fixest::feols(pre_education_expenses_perstudents ~ metro_dummy + log(pre_population) + pre_mean_ordinary_balance_ratio | new_year, data = plot_data)
+summary(model_3)
+
+model_4 <- fixest::feols(pre_education_expenses_perstudents ~ log(pre_population) + pre_mean_ordinary_balance_ratio | new_year, data = plot_data)
+summary(model_4)
+
+
+
