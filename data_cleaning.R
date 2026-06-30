@@ -322,11 +322,12 @@ diff_data <- panel_data_pre |>
   # 3. グループ化を解除して安全な状態に戻す
   dplyr::ungroup()
 
+
 # 空間的な要素を足す
 
 # 1. Shapefileの読み込み
 # ※日本の公的機関（国土交通省やe-Stat）のデータは文字コードがShift-JIS(CP932)であることが多いため、エンコーディングを指定して文字化けを防ぐ。
-map_data <- sf::st_read("N03-20250101_14.shp", options = "ENCODING=CP932")
+map_data <- sf::st_read("N03-20250101_14.shp", options = "ENCODING=Shift_JIS")
 
 # 2. 読み込んだデータの中身（列名）を確認する
 # ここで「市町村コード（5桁）」が入っている列の名前を特定する
@@ -342,6 +343,29 @@ map_data_formatted <- map_data |>
   # 必要な列（作成した region_code と、地図情報である geometry）だけを残して軽くする
   dplyr::select(region_code, geometry)
 
+
+map_data_formatted <- map_data |>
+  dplyr::mutate(
+    raw_code = as.character(N03_007),
+    aggregated_code = dplyr::case_when(
+      stringr::str_starts(raw_code, "1415") ~ "14150", 
+      stringr::str_starts(raw_code, "1413")  ~ "14130",
+      stringr::str_starts(raw_code,"141")  ~ "14100",
+      TRUE ~ raw_code)
+     ) |> 
+  dplyr::mutate(
+    # SSDSEと結合するため、先頭に"R"を付ける
+    region_code = paste0("R", aggregated_code)
+  ) |> 
+  dplyr::group_by(region_code) |> 
+  dplyr::summarise()
+
+test_data <- panel_data_muni |> 
+  dplyr::filter(prefecture == "神奈川県")
+
+
+complete_data_test <- test_data  |> 
+  dplyr::left_join(map_data_formatted, by = "region_code")
 
 
 
