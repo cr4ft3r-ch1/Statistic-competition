@@ -6,6 +6,9 @@
 #install.packages("maps")
 #install.packages("GGally")
 #install.packages("fixest")
+#install.packages("plm")
+#install.packages("spdep")
+#install.packages("spatialreg")
 library(tidyverse)   
 library(modelsummary)
 library(sf)
@@ -14,7 +17,9 @@ library(rnaturalearthdata)
 library(GGally)
 library(patchwork)
 library(fixest)
-
+library(plm)
+library(spdep)
+library(spatialreg)
 # 1. 住基人口データの読み込みとコードの抽出・加工
 pop_data_2016 <- read_csv("市区町村別人口_2016.csv", skip = 3)|>
   dplyr::mutate(
@@ -327,7 +332,7 @@ diff_data <- panel_data_pre |>
 
 # 1. Shapefileの読み込み
 # ※日本の公的機関（国土交通省やe-Stat）のデータは文字コードがShift-JIS(CP932)であることが多いため、エンコーディングを指定して文字化けを防ぐ。
-map_data <- sf::st_read("N03-20250101_14.shp", options = "ENCODING=Shift_JIS")
+map_data <- sf::st_read("N03-20250101_14.shp", options = "ENCODING=CP932")
 
 # 2. 読み込んだデータの中身（列名）を確認する
 # ここで「市町村コード（5桁）」が入っている列の名前を特定する

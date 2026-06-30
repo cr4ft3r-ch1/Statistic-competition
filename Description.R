@@ -323,3 +323,95 @@ summary(model_4)
 
 
 
+# コロプレス図(神奈川県のみ) 
+
+# 3. パネルデータ（属性データ）からの神奈川県抽出
+# ※ panel_data_muni はこれまでの工程で作成済みのデータフレームと仮定
+test_data_2 <- panel_data_muni |> 
+  dplyr::filter(prefecture == "神奈川県") |>
+  # 複数年のパネルデータの場合、一旦特定の年（例：2019年）だけに絞るか、
+  # 全期間の平均をとって1行/1自治体にする必要がある。ここでは2019年に絞る例。
+  dplyr::filter(new_year == 2019)
+
+# 4. 空間データと属性データの完全結合
+complete_data_test <- map_data_formatted |> 
+  dplyr::inner_join(test_data_2, by = "region_code")
+
+# 5. コロプレス図（色分け地図）の作成
+# fillに色分けしたい変数（例：一人当たり教育費）を指定する
+ggplot(data = complete_data_test) +
+  geom_sf(aes(fill = education_expenses_perstudents), color = "black", size = 0.1) +
+  scale_fill_viridis_c(option = "plasma", name = "生徒数") + # 見やすいカラーパレット
+  theme_minimal() +
+  labs(
+    title = "神奈川県：1人当たり教育費の空間的分布（2019年）",
+    subtitle = "ヤードスティック競争の視覚的確認",
+    caption = "※政令指定都市は市単位に集約済み"
+  ) +
+  theme(
+    legend.position = "bottom",
+    axis.text = element_blank() # 地図上の経度緯度の数値を消す
+  )
+
+# 1. 隣接関係のリストを作成（ポリゴンデータから抽出）
+# complete_data_test は前のステップで作成した神奈川県のsfオブジェクト
+kanagawa_nb <- spdep::poly2nb(complete_data_test$geometry, queen = TRUE)
+
+# 2. 隣接関係の重み付け（行標準化: style = "W"）
+# これにより、「隣接する全自治体の平均値」を計算するための重みができる
+kanagawa_listw <- spdep::nb2listw(kanagawa_nb, style = "W", zero.policy = TRUE)
+
+# 確認: 各自治体が平均して何個の自治体と接しているか等のサマリーを表示
+summary(kanagawa_nb)
+
+# 一人当たり教育費に空間的自己相関があるか検定
+moran_test_result <- spdep::moran.test(
+  complete_data_test$education_expenses_perstudents, 
+  listw = kanagawa_listw, 
+  zero.policy = TRUE
+)
+
+print(moran_test_result)
+# ※ p-value < 0.05 であれば、「教育費は空間的にランダムではなく、隣接地域と似通っている」と結論づけられる。
+# 比較用のベースラインOLSモデル（神奈川県単年度版）
+ols_model <- lm(
+  education_expenses_perstudents ~  log(population) + ordinary_balance_ratio,
+  data = complete_data_test
+)
+
+# 空間自己回帰モデル（SAR）の推計
+# lagsarlm関数を用いて、被説明変数に空間ラグを組み込む
+sar_model <- spatialreg::lagsarlm(
+  education_expenses_perstudents ~ log(population) + ordinary_balance_ratio,
+  data = complete_data_test,
+  listw = kanagawa_listw,
+  zero.policy = TRUE
+)
+
+# 結果の表示
+summary(sar_model)
+summary(ols_model)
+
+# 1. 空間パネル推計用のデータ前処理（絶対条件のクリア）
+kanagawa_panel <- panel_data_muni |>
+  # 神奈川県のみを抽出
+  dplyr::filter(prefecture == "神奈川県") |>
+  # 【最重要】空間（自治体コード） -> 時間（年）の順に完全にソートする
+  dplyr::arrange(region_code, year)
+
+# 3. 空間パネル自己回帰モデル（SAR）の推計
+# spml関数を用いて、双方向固定効果（個体・時間）を統制しつつ空間ラグを組み込む
+sar_panel_model <- splm::spml(
+  formula = education_expenses_perstudents ~ log(population) + ordinary_balance_ratio,
+  data = kanagawa_panel,
+  index = c("region_code", "new_year"),
+  listw = kanagawa_listw,      # ステップ1で作成したN×Nの重み行列をそのまま投入
+  model = "within",            # 個体固定効果モデル（Fixed Effects）
+  effect = "twoways",          # 空間（個体）と時間の双方向固定効果を指定
+  spatial.error = "none",      # 空間誤差モデルではなく
+  lag = TRUE                   # 空間ラグモデル（SAR）を指定
+)
+
+# 結果の表示
+# 下部に出力される「Spatial autoregressive coefficient (lambda)」がヤードスティック効果を示す
+summary(sar_panel_model)
