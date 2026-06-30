@@ -365,12 +365,28 @@ map_data_formatted <- map_data |>
   dplyr::group_by(region_code) |> 
   dplyr::summarise()
 
-test_data <- panel_data_muni |> 
+kanagawa_data <- panel_data_muni |> 
   dplyr::filter(prefecture == "神奈川県")
 
 
-complete_data_test <- test_data  |> 
+kanagawa_complete_data <- kanagawa_data  |> 
   dplyr::left_join(map_data_formatted, by = "region_code")
 
 
+# 全国(県単位)のデータ
+#pre_map_data <- sf::st_read("N03-20250101_prefecture.shp", options = "ENCODING=UTF-8")
+#print(colnames(pre_map_data))
+#pre_map_data_formatted <- pre_map_data |>
+#   dplyr::group_by(N03_001) |>
+#   dplyr::summarise()
+# saveRDS(
+#   pre_map_data_formatted,
+#   "pre_map_data_formatted.rds"
+# )
+pre_map_data_formatted <- readRDS(
+  "pre_map_data_formatted.rds"
+)
 
+pre_complete_data <- pre_map_data_formatted |>
+  dplyr::rename(prefecture = `N03_001`) |>
+  dplyr::left_join(panel_data_pre, by = "prefecture")

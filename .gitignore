@@ -2,3 +2,12 @@
 .Rhistory
 .RData
 .Ruserdata
+*.rds 
+*.shp 
+*.dbf 
+*.shx 
+*.prj 
+*.cpg 
+*.geojson 
+*.xml 
+*.zip 
