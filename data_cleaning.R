@@ -243,8 +243,9 @@ f_muni <- function(x) {
         student_number == 0, 
         NA_real_,
         education_expense / (student_number)
-    )
-    )
+    ),
+    teacher_perstudents = teacher_number / student_number
+    ) 
 }
 
 # 縦方向への結合後に、整形関数を一括適用する
