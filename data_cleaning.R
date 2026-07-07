@@ -1,6 +1,5 @@
 #install.packages("tidyverse")
 #install.packages("modelsummary")
-#install.packages("sf")
 #install.packages("rnaturalearth")
 #install.packages("rnaturalearthdata")
 #install.packages("maps")
@@ -11,7 +10,6 @@
 #install.packages("spatialreg")
 library(tidyverse)   
 library(modelsummary)
-library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(GGally)
@@ -307,8 +305,8 @@ panel_data_pre <- panel_data_muni |>
     metro_dummy = dplyr::case_when(
       metro_area %in% "地方圏" ~ 0,
       TRUE ~ 1
-    )
-  )
+    ),
+    prefecture = factor(prefecture))
 
 # final_data は前回作成した縦持ち(Long型)のパネルデータと仮定
 diff_data <- panel_data_pre |>
@@ -390,3 +388,12 @@ pre_map_data_formatted <- readRDS(
 pre_complete_data <- pre_map_data_formatted |>
   dplyr::rename(prefecture = `N03_001`) |>
   dplyr::left_join(panel_data_pre, by = "prefecture")
+
+
+
+
+map_order <- pre_complete_data$prefecture 
+
+# 確認：c("北海道", "青森県", ..., "沖縄県") のような47個の順序が出力されます
+print(map_order)
+

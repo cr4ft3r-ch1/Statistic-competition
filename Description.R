@@ -274,7 +274,7 @@ data_2025 <- raw_data_2025 |>
   dplyr::select("地域コード":"市区町村","経常収支比率（市町村財政）"
                 :"高等学校生徒数")
 
-getwd()
+
 
 # 相関を散布図で見る
 
@@ -353,6 +353,9 @@ ggplot(data = complete_data_test) +
     axis.text = element_blank() # 地図上の経度緯度の数値を消す
   )
 
+
+
+
 # 1. 隣接関係のリストを作成（ポリゴンデータから抽出）
 # complete_data_test は前のステップで作成した神奈川県のsfオブジェクト
 kanagawa_nb <- spdep::poly2nb(complete_data_test$geometry, queen = TRUE)
@@ -427,26 +430,50 @@ test_data_3 <- pre_complete_data |>
 
 # 5. コロプレス図（色分け地図）の作成
 # fillに色分けしたい変数（例：一人当たり教育費）を指定する
-ggplot(data = test_data_3) +
-  geom_sf(aes(fill = pre_education_expenses_perstudents), color = "black", size = 0.1) +
+ggplot2::ggplot(data = test_data_3) +
+  ggplot2::geom_sf(ggplot2::aes(fill = pre_education_expenses_perstudents), color = "black", size = 0.1) +
   scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
   theme_minimal() +
   labs(
-    title = "全国：1人当たり教育費の空間的分布（2019年）",
-    subtitle = "ヤードスティック競争の視覚的確認"
+    title = "全国：1人当たり教育費の空間的分布（2019年）"
   ) +
   theme(
     legend.position = "bottom",
     axis.text = element_blank() # 地図上の経度緯度の数値を消す
   )
 
-# 1. 隣接関係のリストを作成（ポリゴンデータから抽出）
-# complete_data_test は前のステップで作成した神奈川県のsfオブジェクト
-prefecture_nb <- spdep::poly2nb(test_data_3$geometry, queen = TRUE)
+# 5. コロプレス図（色分け地図）の作成
+# fillに色分けしたい変数（例：一人当たり教育費）を指定する
+pre_complete_data |> 
+  dplyr::group_by(prefecture) |> 
+  dplyr::mutate(
+  mean_pre_education_expenses_perstudents = mean(pre_education_expenses_perstudents)
+)
 
-# 2. 隣接関係の重み付け（行標準化: style = "W"）
-# これにより、「隣接する全自治体の平均値」を計算するための重みができる
-prefecture_listw <- spdep::nb2listw(prefecture_nb, style = "W", zero.policy = TRUE)
+
+ggplot2::ggplot(data = pre_complete_data) +
+  ggplot2::geom_sf(ggplot2::aes(fill = mean_pre_education_expenses_perstudents), color = "black", size = 0.1) +
+  scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
+  theme_minimal() +
+  labs(
+    title = "全国：1人当たり教育費の空間的分布（5年平均）"
+  ) +
+  theme(
+    legend.position = "bottom",
+    axis.text = element_blank() # 地図上の経度緯度の数値を消す
+  )
+  
+  
+  
+  
+  
+# # 1. 隣接関係のリストを作成（ポリゴンデータから抽出）
+# # complete_data_test は前のステップで作成した神奈川県のsfオブジェクト
+#prefecture_nb <- spdep::poly2nb(test_data_3$geometry, queen = TRUE)
+# 
+# # 2. 隣接関係の重み付け（行標準化: style = "W"）
+# # これにより、「隣接する全自治体の平均値」を計算するための重みができる
+#prefecture_listw <- spdep::nb2listw(prefecture_nb, style = "W", zero.policy = TRUE)
 
 # 確認: 各自治体が平均して何個の自治体と接しているか等のサマリーを表示
 summary(prefecture_nb)
@@ -458,18 +485,18 @@ moran_test_result_2 <- spdep::moran.test(
   zero.policy = TRUE
 )
 
-print(moran_test_result)
+print(moran_test_result_2)
 # ※ p-value < 0.05 であれば、「教育費は空間的にランダムではなく、隣接地域と似通っている」と結論づけられる。
 # 比較用のベースラインOLSモデル（神奈川県単年度版）
-ols_model_2 <- lm(
-  pre_education_expenses_perstudents ~  log(pre_population) + ordinary_balance_ratio,
+ols_model_2 <- estimatr::lm_robust(
+  pre_education_expenses_perstudents ~  log(pre_population) + mean_ordinary_balance_ratio,
   data = test_data_3
 )
 
 # 空間自己回帰モデル（SAR）の推計
 # lagsarlm関数を用いて、被説明変数に空間ラグを組み込む
 sar_model_2 <- spatialreg::lagsarlm(
-  pre_education_expenses_perstudents ~ log(pre_population) + ordinary_balance_ratio,
+  pre_education_expenses_perstudents ~ log(pre_population) + mean_ordinary_balance_ratio,
   data = test_data_3,
   listw = prefecture_listw,
   zero.policy = TRUE
@@ -481,15 +508,39 @@ summary(ols_model_2)
 
 # 1. 空間パネル推計用のデータ前処理（絶対条件のクリア）
 prefecture_panel <- panel_data_pre |>
-  # 【最重要】空間（自治体コード） -> 時間（年）の順に完全にソートする
-  dplyr::arrange(region_code, year)
+  # 【最重要】 -> 時間（年）の順に完全にソートする
+  dplyr::arrange(prefecture, new_year)
+
+clean_panel <- prefecture_panel |> 
+  dplyr::filter(
+    !is.na(pre_education_expenses_perstudents),
+    !is.na(pre_population),
+    !is.na(mean_ordinary_balance_ratio)
+  )
+# ===================================================
+# ステップ3: 空間重み行列 W の次元と並び順をデータに完全同期させる
+# ===================================================
+# データに存在する一意な都道府県のリスト（ソート済み）
+final_pref_list <- unique(final_panel$prefecture)
+
+# 既存のlistw（prefecture_listw）から、データに存在する都道府県だけを抽出し、
+# かつデータの並び順と完全に一致させた「新しい重み行列」を再作成する
+# ※注: もし現在作成しているlistwの元オブジェクト（nbオブジェクト等）があれば
+# そこからサブセットを作成するのが最も安全です。
+# 以下は、listwの名称（attr(prefecture_listw, "region.id")）が都道府県名と一致している場合のコード例です。
+
+# 例: nbオブジェクト（prefecture_nb）からデータの並び順で抽出し直す場合：
+# final_nb <- spdep::subset.nb(prefecture_nb, attr(prefecture_nb, "region.id") %in% final_pref_list)
+# final_listw <- spdep::nb2listw(final_nb, style = "W")
+
+
 
 # 3. 空間パネル自己回帰モデル（SAR）の推計
 # spml関数を用いて、双方向固定効果（個体・時間）を統制しつつ空間ラグを組み込む
 sar_panel_model_2 <- splm::spml(
-  formula = pre_education_expenses_perstudents ~ log(pre_population) + ordinary_balance_ratio,
-  data = prefecture_panel,
-  index = c("region_code", "new_year"),
+  formula = pre_education_expenses_perstudents ~ log(pre_population) + mean_ordinary_balance_ratio,
+  data = final_panel,
+  index = c("prefecture", "new_year"),
   listw = prefecture_listw,      # ステップ1で作成したN×Nの重み行列をそのまま投入
   model = "within",            # 個体固定効果モデル（Fixed Effects）
   effect = "twoways",          # 空間（個体）と時間の双方向固定効果を指定
