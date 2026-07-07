@@ -415,3 +415,88 @@ sar_panel_model <- splm::spml(
 # 結果の表示
 # 下部に出力される「Spatial autoregressive coefficient (lambda)」がヤードスティック効果を示す
 summary(sar_panel_model)
+
+
+
+# 全国で県単位の分析
+# ※ panel_data_muni はこれまでの工程で作成済みのデータフレームと仮定
+test_data_3 <- pre_complete_data |> 
+  # 複数年のパネルデータの場合、一旦特定の年（例：2019年）だけに絞るか、
+  # 全期間の平均をとって1行/1自治体にする必要がある。ここでは2019年に絞る例。
+  dplyr::filter(new_year == 2019)
+
+# 5. コロプレス図（色分け地図）の作成
+# fillに色分けしたい変数（例：一人当たり教育費）を指定する
+ggplot(data = test_data_3) +
+  geom_sf(aes(fill = pre_education_expenses_perstudents), color = "black", size = 0.1) +
+  scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
+  theme_minimal() +
+  labs(
+    title = "全国：1人当たり教育費の空間的分布（2019年）",
+    subtitle = "ヤードスティック競争の視覚的確認"
+  ) +
+  theme(
+    legend.position = "bottom",
+    axis.text = element_blank() # 地図上の経度緯度の数値を消す
+  )
+
+# 1. 隣接関係のリストを作成（ポリゴンデータから抽出）
+# complete_data_test は前のステップで作成した神奈川県のsfオブジェクト
+prefecture_nb <- spdep::poly2nb(test_data_3$geometry, queen = TRUE)
+
+# 2. 隣接関係の重み付け（行標準化: style = "W"）
+# これにより、「隣接する全自治体の平均値」を計算するための重みができる
+prefecture_listw <- spdep::nb2listw(prefecture_nb, style = "W", zero.policy = TRUE)
+
+# 確認: 各自治体が平均して何個の自治体と接しているか等のサマリーを表示
+summary(prefecture_nb)
+
+# 一人当たり教育費に空間的自己相関があるか検定
+moran_test_result_2 <- spdep::moran.test(
+  test_data_3$pre_education_expenses_perstudents, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+
+print(moran_test_result)
+# ※ p-value < 0.05 であれば、「教育費は空間的にランダムではなく、隣接地域と似通っている」と結論づけられる。
+# 比較用のベースラインOLSモデル（神奈川県単年度版）
+ols_model_2 <- lm(
+  pre_education_expenses_perstudents ~  log(pre_population) + ordinary_balance_ratio,
+  data = test_data_3
+)
+
+# 空間自己回帰モデル（SAR）の推計
+# lagsarlm関数を用いて、被説明変数に空間ラグを組み込む
+sar_model_2 <- spatialreg::lagsarlm(
+  pre_education_expenses_perstudents ~ log(pre_population) + ordinary_balance_ratio,
+  data = test_data_3,
+  listw = prefecture_listw,
+  zero.policy = TRUE
+)
+
+# 結果の表示
+summary(sar_model_2)
+summary(ols_model_2)
+
+# 1. 空間パネル推計用のデータ前処理（絶対条件のクリア）
+prefecture_panel <- panel_data_pre |>
+  # 【最重要】空間（自治体コード） -> 時間（年）の順に完全にソートする
+  dplyr::arrange(region_code, year)
+
+# 3. 空間パネル自己回帰モデル（SAR）の推計
+# spml関数を用いて、双方向固定効果（個体・時間）を統制しつつ空間ラグを組み込む
+sar_panel_model_2 <- splm::spml(
+  formula = pre_education_expenses_perstudents ~ log(pre_population) + ordinary_balance_ratio,
+  data = prefecture_panel,
+  index = c("region_code", "new_year"),
+  listw = prefecture_listw,      # ステップ1で作成したN×Nの重み行列をそのまま投入
+  model = "within",            # 個体固定効果モデル（Fixed Effects）
+  effect = "twoways",          # 空間（個体）と時間の双方向固定効果を指定
+  spatial.error = "none",      # 空間誤差モデルではなく
+  lag = TRUE                   # 空間ラグモデル（SAR）を指定
+)
+
+# 結果の表示
+# 下部に出力される「Spatial autoregressive coefficient (lambda)」がヤードスティック効果を示す
+summary(sar_panel_model_2)
