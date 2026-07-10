@@ -3,6 +3,8 @@
 .RData
 .Ruserdata
 *.rds 
+!prefecture_nb.rds
+!prefecture_listw.rds
 *.shp 
 *.dbf 
 *.shx 
