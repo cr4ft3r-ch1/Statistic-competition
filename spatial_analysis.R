@@ -119,40 +119,42 @@ ggplot2::ggplot(data = test_data_3) +
     axis.text = element_blank() # 地図上の経度緯度の数値を消す
   )
 
-# 5. コロプレス図（色分け地図）の作成
-# fillに色分けしたい変数（例：一人当たり教育費）を指定する
-pre_complete_data |> 
-  dplyr::group_by(prefecture) |> 
-  dplyr::mutate(
-    mean_pre_education_expenses_perstudents = mean(pre_education_expenses_perstudents)
-  )
-
-
-ggplot2::ggplot(data = pre_complete_data) +
-  ggplot2::geom_sf(ggplot2::aes(fill = mean_pre_education_expenses_perstudents), color = "black", size = 0.1) +
-  scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
-  theme_minimal() +
-  labs(
-    title = "全国：1人当たり教育費の空間的分布（5年平均）"
-  ) +
-  theme(
-    legend.position = "bottom",
-    axis.text = element_blank() # 地図上の経度緯度の数値を消す
-  )
+# # 5. コロプレス図（色分け地図）の作成
+# # fillに色分けしたい変数（例：一人当たり教育費）を指定する
+# pre_complete_data |> 
+#   dplyr::group_by(prefecture) |> 
+#   dplyr::mutate(
+#     mean_pre_education_expenses_perstudents = mean(pre_education_expenses_perstudents)
+#   )
+# 
+# 
+# ggplot2::ggplot(data = pre_complete_data) +
+#   ggplot2::geom_sf(ggplot2::aes(fill = mean_pre_education_expenses_perstudents), color = "black", size = 0.1) +
+#   scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
+#   theme_minimal() +
+#   labs(
+#     title = "全国：1人当たり教育費の空間的分布（5年平均）"
+#   ) +
+#   theme(
+#     legend.position = "bottom",
+#     axis.text = element_blank() # 地図上の経度緯度の数値を消す
+#   )
 
 
 
 
 
 # # 1. 隣接関係のリストを作成（ポリゴンデータから抽出）
-# # complete_data_test は前のステップで作成した神奈川県のsfオブジェクト
 #prefecture_nb <- spdep::poly2nb(test_data_3$geometry, queen = TRUE)
+#saveRDS(prefecture_nb, "prefecture_nb.rds")
 # 
 # # 2. 隣接関係の重み付け（行標準化: style = "W"）
 # # これにより、「隣接する全自治体の平均値」を計算するための重みができる
 #prefecture_listw <- spdep::nb2listw(prefecture_nb, style = "W", zero.policy = TRUE)
-
+#saveRDS(prefecture_listw, "prefecture_listw.rds")
 # 確認: 各自治体が平均して何個の自治体と接しているか等のサマリーを表示
+prefecture_nb <- readRDS("prefecture_nb.rds")
+prefecture_listw <- readRDS("prefecture_listw.rds")
 summary(prefecture_nb)
 
 # 一人当たり教育費に空間的自己相関があるか検定
