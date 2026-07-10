@@ -119,26 +119,26 @@ ggplot2::ggplot(data = test_data_3) +
     axis.text = element_blank() # 地図上の経度緯度の数値を消す
   )
 
-# # 5. コロプレス図（色分け地図）の作成
-# # fillに色分けしたい変数（例：一人当たり教育費）を指定する
-# pre_complete_data |> 
-#   dplyr::group_by(prefecture) |> 
-#   dplyr::mutate(
-#     mean_pre_education_expenses_perstudents = mean(pre_education_expenses_perstudents)
-#   )
-# 
-# 
-# ggplot2::ggplot(data = pre_complete_data) +
-#   ggplot2::geom_sf(ggplot2::aes(fill = mean_pre_education_expenses_perstudents), color = "black", size = 0.1) +
-#   scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
-#   theme_minimal() +
-#   labs(
-#     title = "全国：1人当たり教育費の空間的分布（5年平均）"
-#   ) +
-#   theme(
-#     legend.position = "bottom",
-#     axis.text = element_blank() # 地図上の経度緯度の数値を消す
-#   )
+# 5. コロプレス図（色分け地図）の作成
+# fillに色分けしたい変数（例：一人当たり教育費）を指定する
+pre_complete_data |>
+  dplyr::group_by(prefecture) |>
+  dplyr::mutate(
+    mean_pre_education_expenses_perstudents = mean(pre_education_expenses_perstudents)
+  )
+
+
+ggplot2::ggplot(data = pre_complete_data) +
+  ggplot2::geom_sf(ggplot2::aes(fill = mean_pre_education_expenses_perstudents), color = "black", size = 0.1) +
+  scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
+  theme_minimal() +
+  labs(
+    title = "全国：1人当たり教育費の空間的分布（5年平均）"
+  ) +
+  theme(
+    legend.position = "bottom",
+    axis.text = element_blank() # 地図上の経度緯度の数値を消す
+  )
 
 
 
@@ -157,6 +157,16 @@ prefecture_nb <- readRDS("prefecture_nb.rds")
 prefecture_listw <- readRDS("prefecture_listw.rds")
 summary(prefecture_nb)
 
+#prefecture_nbの解釈
+plot(st_geometry(test_data_3))
+plot(
+  prefecture_nb,
+  st_coordinates(st_centroid(test_data_3)),
+  add = TRUE
+)
+# 一番隣接しているのは長野県8個
+# test_data_3$prefecture[41]
+
 # 一人当たり教育費に空間的自己相関があるか検定
 moran_test_result_2 <- spdep::moran.test(
   test_data_3$pre_education_expenses_perstudents, 
@@ -166,6 +176,61 @@ moran_test_result_2 <- spdep::moran.test(
 
 print(moran_test_result_2)
 # ※ p-value < 0.05 であれば、「教育費は空間的にランダムではなく、隣接地域と似通っている」と結論づけられる。
+
+# moran's I の散布図を描画
+moran.plot(
+  test_data_3$pre_education_expenses_perstudents,
+  prefecture_listw,
+  labels = test_data_3$prefecture
+)
+
+# 沖縄と北海道を除外してみる
+keep <- card(prefecture_nb) > 0
+nb_keep <- subset(prefecture_nb, keep)
+listw_keep <- nb2listw(
+  nb_keep,
+  style = "W",
+  zero.policy = TRUE
+)
+
+moran.test(
+  test_data_3$pre_education_expenses_perstudents[keep],
+  listw_keep,
+  zero.policy = TRUE
+)
+
+moran.plot(
+  test_data_3$pre_education_expenses_perstudents[keep],
+  listw_keep,
+  labels = test_data_3$prefecture
+)
+
+# 1人あたり教員数に空間的自己相関があるか検定
+moran_test_result_3 <- spdep::moran.test(
+  test_data_3$pre_teacher_perstudents, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+print(moran_test_result_3)
+
+# 人口に空間的自己相関があるか検定
+moran_test__4 <- spdep::moran.test(
+  test_data_3$pre_population, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+print(moran_test_result_4)
+
+# 経常収支比率に空間的自己相関があるか検定
+moran_test_result_5 <- spdep::moran.test(
+  test_data_3$pre_, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+print(moran_test_result_3)
+
+
+
 # 比較用のベースラインOLSモデル（神奈川県単年度版）
 ols_model_2 <- estimatr::lm_robust(
   pre_education_expenses_perstudents ~  log(pre_population) + mean_ordinary_balance_ratio,
