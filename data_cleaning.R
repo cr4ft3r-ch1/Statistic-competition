@@ -272,7 +272,8 @@ panel_data_pre <- panel_data_muni |>
                     
                     real_debt_service_ratio
                     
-                  ),
+                  )&
+                  -c(year),
                 
                 ~sum(.x, na.rm = TRUE),
                 
@@ -397,4 +398,18 @@ map_order <- pre_complete_data$prefecture
 
 # 確認：c("北海道", "青森県", ..., "沖縄県") のような47個の順序が出力されます
 print(map_order)
+
+
+
+
+# パネルデータを年平均のデータに変換
+avg_data <- pre_complete_data |>
+  dplyr::group_by(prefecture) |>
+  dplyr::summarise(
+    dplyr::across(
+      -c(new_year, metro_dummy),
+      ~ if(is.numeric(.x)) mean(.x, na.rm = TRUE) else first(.x)
+    ),
+    metro_dummy = first(metro_dummy)
+  )
 

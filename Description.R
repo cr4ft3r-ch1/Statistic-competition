@@ -326,7 +326,7 @@ summary(model_4)
 
 
 #人的と財政的のうちどちらの影響が大きいか比較
-model_teacher <- estimatr::lm_robust(data = panel_data_pre, pre_teacher_perstudents ~ metro_dummy + pre_population + pre_mean_ordinary_balance_ratio)
+model_teacher <- estimatr::lm_robust(data = panel_data_pre, pre_teacher_perstudents ~ metro_dummy + log(pre_population) + pre_mean_ordinary_balance_ratio)
 
 summary(model_teacher)
 

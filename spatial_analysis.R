@@ -98,7 +98,9 @@ summary(sar_panel_model)
 
 
 
-# 全国で県単位の分析
+## 全国で県単位の分析(2019年のデータを用いた分析)
+
+
 # ※ panel_data_muni はこれまでの工程で作成済みのデータフレームと仮定
 test_data_3 <- pre_complete_data |> 
   # 複数年のパネルデータの場合、一旦特定の年（例：2019年）だけに絞るか、
@@ -119,26 +121,7 @@ ggplot2::ggplot(data = test_data_3) +
     axis.text = element_blank() # 地図上の経度緯度の数値を消す
   )
 
-# 5. コロプレス図（色分け地図）の作成
-# fillに色分けしたい変数（例：一人当たり教育費）を指定する
-pre_complete_data |>
-  dplyr::group_by(prefecture) |>
-  dplyr::mutate(
-    mean_pre_education_expenses_perstudents = mean(pre_education_expenses_perstudents)
-  )
 
-
-ggplot2::ggplot(data = pre_complete_data) +
-  ggplot2::geom_sf(ggplot2::aes(fill = mean_pre_education_expenses_perstudents), color = "black", size = 0.1) +
-  scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
-  theme_minimal() +
-  labs(
-    title = "全国：1人当たり教育費の空間的分布（5年平均）"
-  ) +
-  theme(
-    legend.position = "bottom",
-    axis.text = element_blank() # 地図上の経度緯度の数値を消す
-  )
 
 
 
@@ -214,7 +197,7 @@ moran_test_result_3 <- spdep::moran.test(
 print(moran_test_result_3)
 
 # 人口に空間的自己相関があるか検定
-moran_test__4 <- spdep::moran.test(
+moran_test_result_4 <- spdep::moran.test(
   test_data_3$pre_population, 
   listw = prefecture_listw, 
   zero.policy = TRUE
@@ -223,11 +206,11 @@ print(moran_test_result_4)
 
 # 経常収支比率に空間的自己相関があるか検定
 moran_test_result_5 <- spdep::moran.test(
-  test_data_3$pre_, 
+  test_data_3$pre_mean_ordinary_balance_ratio, 
   listw = prefecture_listw, 
   zero.policy = TRUE
 )
-print(moran_test_result_3)
+print(moran_test_result_5)
 
 
 
@@ -250,17 +233,21 @@ sar_model_2 <- spatialreg::lagsarlm(
 summary(sar_model_2)
 summary(ols_model_2)
 
-# 1. 空間パネル推計用のデータ前処理（絶対条件のクリア）
-prefecture_panel <- panel_data_pre |>
-  # 【最重要】 -> 時間（年）の順に完全にソートする
-  dplyr::arrange(prefecture, new_year)
 
-clean_panel <- prefecture_panel |> 
-  dplyr::filter(
-    !is.na(pre_education_expenses_perstudents),
-    !is.na(pre_population),
-    !is.na(mean_ordinary_balance_ratio)
-  )
+
+# # 1. 空間パネル推計用のデータ前処理（絶対条件のクリア）
+# prefecture_panel <- panel_data_pre |>
+#   # 【最重要】 -> 時間（年）の順に完全にソートする
+#   dplyr::arrange(prefecture, new_year)
+# 
+# clean_panel <- prefecture_panel |> 
+#   dplyr::filter(
+#     !is.na(pre_education_expenses_perstudents),
+#     !is.na(pre_population),
+#     !is.na(mean_ordinary_balance_ratio)
+#   )
+
+
 # ===================================================
 # ステップ3: 空間重み行列 W の次元と並び順をデータに完全同期させる
 # ===================================================
@@ -295,3 +282,23 @@ sar_panel_model_2 <- splm::spml(
 # 結果の表示
 # 下部に出力される「Spatial autoregressive coefficient (lambda)」がヤードスティック効果を示す
 summary(sar_panel_model_2)
+
+
+
+
+
+## 全国で県単位の分析(年平均のデータを用いた分析)
+# 5. コロプレス図（色分け地図）の作成
+# fillに色分けしたい変数（例：一人当たり教育費）を指定する
+ggplot2::ggplot(data = avg_data) +
+  ggplot2::geom_sf(ggplot2::aes(fill = pre_education_expenses_perstudents), color = "black", size = 0.1) +
+  scale_fill_viridis_c(option = "plasma", name = "1人あたり教育費") + # 見やすいカラーパレット
+  theme_minimal() +
+  labs(
+    title = "全国：1人当たり教育費の空間的分布（年平均）"
+  ) +
+  theme(
+    legend.position = "bottom",
+    axis.text = element_blank() # 地図上の経度緯度の数値を消す
+  )
+
