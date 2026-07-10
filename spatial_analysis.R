@@ -288,7 +288,7 @@ summary(sar_panel_model_2)
 
 
 ## 全国で県単位の分析(年平均のデータを用いた分析)
-# 5. コロプレス図（色分け地図）の作成
+# 1. コロプレス図（色分け地図）の作成
 # fillに色分けしたい変数（例：一人当たり教育費）を指定する
 ggplot2::ggplot(data = avg_data) +
   ggplot2::geom_sf(ggplot2::aes(fill = pre_education_expenses_perstudents), color = "black", size = 0.1) +
@@ -302,3 +302,9 @@ ggplot2::ggplot(data = avg_data) +
     axis.text = element_blank() # 地図上の経度緯度の数値を消す
   )
 
+avg_moran_test_result <- spdep::moran.test(
+  avg_data$pre_education_expenses_perstudents, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+print(avg_moran_test_result)
