@@ -301,10 +301,34 @@ ggplot2::ggplot(data = avg_data) +
     legend.position = "bottom",
     axis.text = element_blank() # 地図上の経度緯度の数値を消す
   )
-
+# 1人あたり教育費に空間的自己相関があるか検定
 avg_moran_test_result <- spdep::moran.test(
   avg_data$pre_education_expenses_perstudents, 
   listw = prefecture_listw, 
   zero.policy = TRUE
 )
 print(avg_moran_test_result)
+
+# 1人あたり教員数に空間的自己相関があるか検定
+avg_moran_test_result_2 <- spdep::moran.test(
+  avg_data$pre_teacher_perstudents, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+print(avg_moran_test_result_2)
+
+# 人口に空間的自己相関があるか検定
+avg_moran_test_result_3 <- spdep::moran.test(
+  avg_data$pre_population, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+print(avg_moran_test_result_3)
+
+# 経常収支比率に空間的自己相関があるか検定
+avg_moran_test_result_4 <- spdep::moran.test(
+  avg_data$pre_mean_ordinary_balance_ratio, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+print(avg_moran_test_result_4)
