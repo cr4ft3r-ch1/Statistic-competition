@@ -47,7 +47,7 @@ kanagawa_listw <- spdep::nb2listw(kanagawa_nb, style = "W", zero.policy = TRUE)
 summary(kanagawa_nb)
 
 # 一人当たり教育費に空間的自己相関があるか検定
-moran_test_result <- spdep::moran.test(
+kanagawa_moran_test_result <- spdep::moran.test(
   complete_data_test$education_expenses_perstudents, 
   listw = kanagawa_listw, 
   zero.policy = TRUE
@@ -55,6 +55,24 @@ moran_test_result <- spdep::moran.test(
 
 print(moran_test_result)
 
+# 神奈川県のlocal moran's test
+kanagawa_local_moran_result <- spdep::localmoran(
+  complete_data_test$education_expenses_perstudents,
+  listw = kanagawa_listw,
+  zero.policy = TRUE
+)
+print(kanagawa_local_moran_result)
+
+
+lisa_result_kanagawa <- data.frame(
+  prefecture = complete_data_test$municipality,
+  Ii = kanagawa_local_moran_result[, "Ii"],
+  Z_Ii = kanagawa_local_moran_result[, "Z.Ii"],
+  p_value = kanagawa_local_moran_result[, "Pr(z != E(Ii))"],
+  cluster = attr(kanagawa_local_moran_result, "quadr")[, "mean"]
+)
+lisa_result_kanagawa |>
+  filter(p_value < 0.05)
 
 # ※ p-value < 0.05 であれば、「教育費は空間的にランダムではなく、隣接地域と似通っている」と結論づけられる。
 # 比較用のベースラインOLSモデル（神奈川県単年度版）
@@ -361,116 +379,202 @@ lisa_result
 lisa_result |>
   filter(p_value < 0.10)
 
-# 2017-2018のラグに関してのMoran Test 
-test_data_2 <- pre_complete_data |> 
-  dplyr::filter(new_year == 2018)
-moran_test_result_2018 <- spdep::moran.test(
-  test_data_2$lag_pre_education_expenses_perstudents, 
-  listw = prefecture_listw, 
-  zero.policy = TRUE
-)
-
-print(moran_test_result_2018)
-
-moran.plot(
-  test_data_3$lag_pre_education_expenses_perstudents,
-  prefecture_listw,
-  labels = test_data_3$prefecture,
-  main = "Lag Moran plot 2018"
-)
 
 
-local_moran_result_2018 <- spdep::localmoran(
-  test_data_2$lag_pre_education_expenses_perstudents,
-  listw = prefecture_listw,
-  zero.policy = TRUE
-)
 
-print(local_moran_result_2018)
+# # 2017-2018のラグに関してのMoran Test 
+# test_data_6 <- pre_complete_data |> 
+#   dplyr::filter(new_year == 2018)
+# moran_test_result_2018 <- spdep::moran.test(
+#   test_data_6$lag_pre_education_expenses_perstudents, 
+#   listw = prefecture_listw, 
+#   zero.policy = TRUE
+# )
+# 
+# print(moran_test_result_2018)
+# 
+# moran.plot(
+#   test_data_6$lag_pre_education_expenses_perstudents,
+#   prefecture_listw,
+#   labels = test_data_6$prefecture,
+#   main = "Lag Moran plot 2018"
+# )
+# 
+# 
+# local_moran_result_2018 <- spdep::localmoran(
+#   test_data_6$lag_pre_education_expenses_perstudents,
+#   listw = prefecture_listw,
+#   zero.policy = TRUE
+# )
+# 
+# print(local_moran_result_2018)
+# 
+# lisa_result_2018 <- data.frame(
+#   prefecture = test_data_6$prefecture,
+#   Ii = local_moran_result_2018[, "Ii"],
+#   Z_Ii = local_moran_result_2018[, "Z.Ii"],
+#   p_value = local_moran_result_2018[, "Pr(z != E(Ii))"],
+#   cluster = attr(local_moran_result_2018, "quadr")[, "mean"]
+# )
+# lisa_result_2018 |>
+#   filter(p_value < 0.05)
+# 
+# 
+# 
+# # 2018-2019のラグに関してのMoran Test 
+# moran_test_result_2019 <- spdep::moran.test(
+#   test_data_3$lag_pre_education_expenses_perstudents, 
+#   listw = prefecture_listw, 
+#   zero.policy = TRUE
+# )
+# 
+# print(moran_test_result_2019)
+# 
+# moran.plot(
+#   test_data_3$lag_pre_education_expenses_perstudents,
+#   prefecture_listw,
+#   labels = test_data_3$prefecture,
+#   main = "Lag Moran plot 2019"
+# )
+# 
+# 
+# local_moran_result_2019 <- spdep::localmoran(
+#   test_data_3$lag_pre_education_expenses_perstudents,
+#   listw = prefecture_listw,
+#   zero.policy = TRUE
+# )
+# 
+# print(local_moran_result_2019)
+# 
+# lisa_result_2019 <- data.frame(
+#   prefecture = test_data_3$prefecture,
+#   Ii = local_moran_result_2019[, "Ii"],
+#   Z_Ii = local_moran_result_2019[, "Z.Ii"],
+#   p_value = local_moran_result_2019[, "Pr(z != E(Ii))"],
+#   cluster = attr(local_moran_result_2019, "quadr")[, "mean"]
+# )
+# lisa_result_2019 |>
+#   filter(p_value < 0.05)
+# 
+# # 2019-2020のラグに関してのMoran Test
+# test_data_4 <- pre_complete_data |> 
+#   dplyr::filter(new_year == 2020)
+# 
+# moran_test_result_2020 <- spdep::moran.test(
+#   test_data_4$lag_pre_education_expenses_perstudents, 
+#   listw = prefecture_listw, 
+#   zero.policy = TRUE
+# )
+# 
+# print(moran_test_result_2020)
+# 
+# moran.plot(
+#   test_data_4$lag_pre_education_expenses_perstudents,
+#   prefecture_listw,
+#   labels = test_data_4$prefecture,
+#   main = "Lag Moran plot 2020"
+# )
+# 
+# local_moran_result_2020 <- spdep::localmoran(
+#   test_data_4$lag_pre_education_expenses_perstudents,
+#   listw = prefecture_listw,
+#   zero.policy = TRUE
+# )
+# print(local_moran_result_2020)
+# 
+# lisa_result_2020 <- data.frame(
+#   prefecture = test_data_4$prefecture,
+#   Ii = local_moran_result_2020[, "Ii"],
+#   Z_Ii = local_moran_result_2020[, "Z.Ii"],
+#   p_value = local_moran_result_2020[, "Pr(z != E(Ii))"],
+#   cluster = attr(local_moran_result_2020, "quadr")[, "mean"]
+# )
+# lisa_result_2020 |>
+#   filter(p_value < 0.05)
+# 
+# 
+# 
+# # 2020-2021のラグに関してのMoran Test
+# test_data_5 <- pre_complete_data |> 
+#   dplyr::filter(new_year == 2021)
+# 
+# moran_test_result_2021 <- spdep::moran.test(
+#   test_data_5$lag_pre_education_expenses_perstudents, 
+#   listw = prefecture_listw, 
+#   zero.policy = TRUE
+# )
+# 
+# print(moran_test_result_2021)
+# 
+# moran.plot(
+#   test_data_5$lag_pre_education_expenses_perstudents,
+#   prefecture_listw,
+#   labels = test_data_5$prefecture,
+#   main = "Lag Moran plot 2021"
+# )
+# 
+# local_moran_result_2021 <- spdep::localmoran(
+#   test_data_5$lag_pre_education_expenses_perstudents,
+#   listw = prefecture_listw,
+#   zero.policy = TRUE
+# )
+# 
+# lisa_result_2021 <- data.frame(
+#   prefecture = test_data_5$prefecture,
+#   Ii = local_moran_result_2021[, "Ii"],
+#   Z_Ii = local_moran_result_2021[, "Z.Ii"],
+#   p_value = local_moran_result_2021[, "Pr(z != E(Ii))"],
+#   cluster = attr(local_moran_result_2021, "quadr")[, "mean"]
+# )
+# lisa_result_2021 |>
+#   filter(p_value < 0.05)
 
-
-# 2018-2019のラグに関してのMoran Test 
-moran_test_result_2019 <- spdep::moran.test(
-  test_data_3$lag_pre_education_expenses_perstudents, 
-  listw = prefecture_listw, 
-  zero.policy = TRUE
-)
-
-print(moran_test_result_2019)
-
-moran.plot(
-  test_data_3$lag_pre_education_expenses_perstudents,
-  prefecture_listw,
-  labels = test_data_3$prefecture,
-  main = "Lag Moran plot 2019"
-)
-
-
-local_moran_result_2019 <- spdep::localmoran(
-  test_data_3$lag_pre_education_expenses_perstudents,
-  listw = prefecture_listw,
-  zero.policy = TRUE
-)
-
-print(local_moran_result_2019)
-
-
-# 2019-2020のラグに関してのMoran Test
-test_data_4 <- pre_complete_data |> 
-  dplyr::filter(new_year == 2020)
-
-moran_test_result_2020 <- spdep::moran.test(
-  test_data_4$lag_pre_education_expenses_perstudents, 
-  listw = prefecture_listw, 
-  zero.policy = TRUE
-)
-
-print(moran_test_result_2020)
-
-moran.plot(
-  test_data_4$lag_pre_education_expenses_perstudents,
-  prefecture_listw,
-  labels = test_data_4$prefecture,
-  main = "Lag Moran plot 2020"
-)
-
-local_moran_result_2020 <- spdep::localmoran(
-  test_data_4$lag_pre_education_expenses_perstudents,
-  listw = prefecture_listw,
-  zero.policy = TRUE
-)
-print(local_moran_result_2020)
-# 2020-2021のラグに関してのMoran Test
-test_data_5 <- pre_complete_data |> 
-  dplyr::filter(new_year == 2021)
-
-moran_test_result_2021 <- spdep::moran.test(
-  test_data_5$lag_pre_education_expenses_perstudents, 
-  listw = prefecture_listw, 
-  zero.policy = TRUE
-)
-
-print(moran_test_result_2021)
-
-moran.plot(
-  test_data_5$lag_pre_education_expenses_perstudents,
-  prefecture_listw,
-  labels = test_data_5$prefecture,
-  main = "Lag Moran plot 2021"
-)
-
-local_moran_result_2021 <- spdep::localmoran(
-  test_data_5$lag_pre_education_expenses_perstudents,
-  listw = prefecture_listw,
-  zero.policy = TRUE
-)
-
-lisa_result_2021 <- data.frame(
-  prefecture = test_data_5$prefecture,
-  Ii = local_moran_result_2021[, "Ii"],
-  Z_Ii = local_moran_result_2021[, "Z.Ii"],
-  p_value = local_moran_result_2021[, "Pr(z != E(Ii))"],
-  cluster = attr(local_moran_result_2021, "quadr")[, "mean"]
-)
-lisa_result_2021 |>
-  filter(p_value < 0.05)
+# 上の内容を関数化
+run_lisa <- function(data, year){
+  
+  tmp <- data |>
+    dplyr::filter(new_year == year)
+  
+  # Global Moran's I
+  moran_test <- spdep::moran.test(
+    tmp$lag_pre_education_expenses_perstudents,
+    prefecture_listw,
+    zero.policy = TRUE
+  )
+  
+  moran_summary <- data.frame(
+    year = year,
+    moran_i = unname(moran_test$estimate["Moran I statistic"]),
+    p_value = moran_test$p.value
+  )
+  
+  # Local Moran's I
+  local_moran <- spdep::localmoran(
+    tmp$lag_pre_education_expenses_perstudents,
+    prefecture_listw,
+    zero.policy = TRUE
+  )
+  
+  lisa_summary <- data.frame(
+    year = year,
+    prefecture = tmp$prefecture,
+    Ii = local_moran[, "Ii"],
+    Z_Ii = local_moran[, "Z.Ii"],
+    p_value = local_moran[, "Pr(z != E(Ii))"],
+    cluster = attr(local_moran, "quadr")[, "mean"]
+  ) |>
+    dplyr::filter(p_value < 0.05)
+  
+  list(
+    moran = moran_summary,
+    lisa = lisa_summary
+  )
+}
+result_2018 <- run_lisa(pre_complete_data, 2018)
+print(result_2018)
+result_2019 <- run_lisa(pre_complete_data, 2019)
+print(result_2019)
+result_2020 <- run_lisa(pre_complete_data, 2020)
+print(result_2020)
+result_2021 <- run_lisa(pre_complete_data, 2021)
+print(result_2021)
