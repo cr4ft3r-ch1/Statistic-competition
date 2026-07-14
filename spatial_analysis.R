@@ -1,4 +1,6 @@
 source("data_cleaning.R")
+prefecture_nb <- readRDS("prefecture_nb.rds")
+prefecture_listw <- readRDS("prefecture_listw.rds")
 
 # コロプレス図(神奈川県のみ) 
 
@@ -52,6 +54,8 @@ moran_test_result <- spdep::moran.test(
 )
 
 print(moran_test_result)
+
+
 # ※ p-value < 0.05 であれば、「教育費は空間的にランダムではなく、隣接地域と似通っている」と結論づけられる。
 # 比較用のベースラインOLSモデル（神奈川県単年度版）
 ols_model <- lm(
@@ -212,6 +216,28 @@ moran_test_result_5 <- spdep::moran.test(
 )
 print(moran_test_result_5)
 
+moran_test_result_6 <- spdep::moran.test(
+  test_data_3$lag_pre_education_expenses_perstudents, 
+  listw = prefecture_listw, 
+  zero.policy = TRUE
+)
+
+print(moran_test_result_6)
+
+moran.plot(
+  test_data_3$lag_pre_education_expenses_perstudents,
+  prefecture_listw,
+  labels = test_data_3$prefecture
+)
+
+local_moran_result_test <- spdep::localmoran(
+  test_data_3$lag_pre_education_expenses_perstudents,
+  listw = prefecture_listw,
+  zero.policy = TRUE
+)
+
+print(local_moran_result_test)
+
 
 
 # 比較用のベースラインOLSモデル（神奈川県単年度版）
@@ -332,3 +358,27 @@ avg_moran_test_result_4 <- spdep::moran.test(
   zero.policy = TRUE
 )
 print(avg_moran_test_result_4)
+
+
+# Local Moran's I の分析
+local_moran_result <- spdep::localmoran(
+  avg_data$pre_education_expenses_perstudents,
+  listw = prefecture_listw,
+  zero.policy = TRUE
+)
+
+print(local_moran_result)
+
+lisa_result <- data.frame(
+  prefecture = avg_data$prefecture,
+  Ii = local_moran_result[, "Ii"],
+  Z_Ii = local_moran_result[, "Z.Ii"],
+  p_value = local_moran_result[, "Pr(z != E(Ii))"],
+  cluster = attr(local_moran_result, "quadr")[, "mean"]
+)
+
+lisa_result
+lisa_result |>
+  filter(p_value < 0.10)
+
+

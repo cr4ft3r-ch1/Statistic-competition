@@ -308,7 +308,15 @@ panel_data_pre <- panel_data_muni |>
       metro_area %in% "地方圏" ~ 0,
       TRUE ~ 1
     ),
-    prefecture = factor(prefecture))
+    prefecture = factor(prefecture)) 
+
+panel_data_pre <- panel_data_pre |>
+  dplyr::arrange(new_year, .by_group = TRUE) |>
+  dplyr::group_by(prefecture) |> 
+  dplyr::mutate(lag_pre_education_expenses_perstudents = (pre_education_expenses_perstudents - dplyr::lag(pre_education_expenses_perstudents))/dplyr::lag(pre_education_expenses_perstudents),
+                lag_pre_education_expenses_perstudents = dplyr::coalesce(lag_pre_education_expenses_perstudents, 0))|>
+  dplyr::ungroup()
+
 
 # final_data は前回作成した縦持ち(Long型)のパネルデータと仮定
 diff_data <- panel_data_pre |>
