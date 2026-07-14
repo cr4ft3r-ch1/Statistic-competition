@@ -472,5 +472,5 @@ lisa_result_2021 <- data.frame(
   p_value = local_moran_result_2021[, "Pr(z != E(Ii))"],
   cluster = attr(local_moran_result_2021, "quadr")[, "mean"]
 )
-lisa_result |>
+lisa_result_2021 |>
   filter(p_value < 0.05)
