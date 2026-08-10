@@ -73,6 +73,15 @@ pop_data_2021 <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
     "地域コード", 
     "population" = `人`  # 列名は「人」
   )
+pop_data_2022 <- read_csv("市区町村別人口_2022.csv", skip = 5) |>
+  dplyr::mutate(
+    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
+    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+  ) |>
+  dplyr::select(
+    "地域コード", 
+    "population" = `人`  # 列名は「人」
+  )
 
 # 本データの読み込み
 
@@ -180,6 +189,7 @@ add_student_number <- function(base_data, target_year_data) {
   return(result_data)
 }
 
+data_2022_merged <- add_student_number(data_2026,data_2024)
 data_2021_merged <- add_student_number(data_2025,data_2023)
 data_2020_merged <- add_student_number(data_2024,data_2022)
 data_2019_merged <- add_student_number(data_2023,data_2021)
@@ -260,7 +270,7 @@ f_muni <- function(x) {
 # 縦方向への結合後に、整形関数を一括適用する
 #panel_data_muni <- bind_rows(data_2016_merged, data_2017_merged,data_2018_merged, data_2019_merged, data_2020_merged,data_2021_merged) |> 
 #  f_muni()
-panel_data_muni <- bind_rows(data_2017_merged,data_2018_merged, data_2019_merged, data_2020_merged,data_2021_merged) |> 
+panel_data_muni <- bind_rows(data_2017_merged, data_2018_merged, data_2019_merged, data_2020_merged, data_2021_merged, data_2022_merged) |> 
   f_muni()
 # 県で分ける
 panel_data_pre <- panel_data_muni |> 
@@ -343,6 +353,10 @@ diff_data <- panel_data_pre |>
   ) |>
   # 3. グループ化を解除して安全な状態に戻す
   dplyr::ungroup()
+
+
+
+
 
 
 # 空間的な要素を足す
