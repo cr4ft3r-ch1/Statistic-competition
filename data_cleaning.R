@@ -139,6 +139,15 @@ data_2025 <- read_csv(
                   student_year = 2023)|>
   dplyr::inner_join(pop_data_2021, by = "地域コード")
 
+data_2026 <- read_csv(
+  "SSDSE-A-2026.csv",
+  locale = locale(encoding = "CP932"),
+  skip = 2
+)|> dplyr::mutate(year = 2026,
+                  education_year = 2022,
+                  student_year = 2024)|>
+  dplyr::inner_join(pop_data_2021, by = "地域コード")
+
 
 # # --- 年度ごとの設定を tibble で定義 ---
 # ssdse_config <- tibble::tribble(
