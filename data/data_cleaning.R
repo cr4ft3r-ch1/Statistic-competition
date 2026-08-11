@@ -330,69 +330,135 @@ f_muni <- function(x) {
 panel_data_muni <- bind_rows(data_2019_merged, data_2020_merged, data_2021_merged, data_2022_merged) |> 
   f_muni()
 # 県で分ける
-panel_data_pre <- panel_data_muni |> 
-  dplyr::group_by(prefecture,new_year) |> 
-  dplyr::summarise(dplyr::across(c(ordinary_balance_ratio,real_debt_service_ratio),
-                                 
-                                 ~mean(.x, na.rm = TRUE),
-                                 
-                                 .names = "mean_{.col}"
-                                 
-  ),
-  
-  dplyr::across(where(is.numeric)&
-                  
-                  !c(
-                    
-                    ordinary_balance_ratio,
-                    
-                    real_debt_service_ratio
-                    
-                  )&
-                  -c(year),
-                
-                ~sum(.x, na.rm = TRUE),
-                
-                .names = "pre_{.col}"
-                
-  ),.groups = "drop"
-  ) |> 
+# 市区町村データ → 県単位データ
+panel_data_pre <- panel_data_muni |>
+  dplyr::group_by(prefecture, new_year) |>
+  dplyr::summarise(
+    dplyr::across(
+      c(ordinary_balance_ratio, real_debt_service_ratio),
+      ~ mean(.x, na.rm = TRUE),
+      .names = "mean_{.col}"
+    ),
+    
+    dplyr::across(
+      where(is.numeric) &
+        !c(
+          ordinary_balance_ratio,
+          real_debt_service_ratio
+        ) &
+        -c(
+          year,
+          education_expenses_perstudents,
+          teacher_perstudents
+        ),
+      ~ sum(.x, na.rm = TRUE),
+      .names = "pre_{.col}"
+    ),
+    
+    .groups = "drop"
+  ) |>
+  dplyr::mutate(
+    # 市区町村の教育費を合計してから、
+    # 県全体の生徒数で割る
+    pre_education_expenses_perstudents = dplyr::if_else(
+      pre_student_number == 0,
+      NA_real_,
+      pre_education_expense / pre_student_number
+    ),
+    
+    pre_teacher_perstudents = dplyr::if_else(
+      pre_student_number == 0,
+      NA_real_,
+      pre_teacher_number / pre_student_number
+    )
+  ) |>
   dplyr::mutate(
     region = dplyr::case_when(
-      prefecture %in% c("北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県") ~ "北海道・東北地方",
-      prefecture %in% c("新潟県", "富山県", "石川県", "福井県") ~ "北陸地方",
-      prefecture %in% c("茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県") ~ "関東地方",
-      prefecture %in% c("山梨県", "長野県", "岐阜県", "静岡県", "愛知県") ~ "中部地方",
-      prefecture %in% c("三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県") ~ "近畿地方",
-      prefecture %in% c("鳥取県", "島根県", "岡山県", "広島県", "山口県") ~ "中国地方",
-      prefecture %in% c("徳島県", "香川県", "愛媛県", "高知県") ~ "四国地方",
-      prefecture %in% c("福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県") ~ "九州・沖縄地方",
+      prefecture %in% c(
+        "北海道", "青森県", "岩手県", "宮城県", "秋田県",
+        "山形県", "福島県"
+      ) ~ "北海道・東北地方",
+      
+      prefecture %in% c(
+        "新潟県", "富山県", "石川県", "福井県"
+      ) ~ "北陸地方",
+      
+      prefecture %in% c(
+        "茨城県", "栃木県", "群馬県", "埼玉県",
+        "千葉県", "東京都", "神奈川県"
+      ) ~ "関東地方",
+      
+      prefecture %in% c(
+        "山梨県", "長野県", "岐阜県", "静岡県", "愛知県"
+      ) ~ "中部地方",
+      
+      prefecture %in% c(
+        "三重県", "滋賀県", "京都府", "大阪府",
+        "兵庫県", "奈良県", "和歌山県"
+      ) ~ "近畿地方",
+      
+      prefecture %in% c(
+        "鳥取県", "島根県", "岡山県", "広島県", "山口県"
+      ) ~ "中国地方",
+      
+      prefecture %in% c(
+        "徳島県", "香川県", "愛媛県", "高知県"
+      ) ~ "四国地方",
+      
+      prefecture %in% c(
+        "福岡県", "佐賀県", "長崎県", "熊本県",
+        "大分県", "宮崎県", "鹿児島県", "沖縄県"
+      ) ~ "九州・沖縄地方",
+      
       TRUE ~ NA_character_
     ),
+    
     metro_area = dplyr::case_when(
-      prefecture %in% c("東京都", "神奈川県", "埼玉県", "千葉県") ~ "首都圏",
-      prefecture %in% c("大阪府", "京都府", "兵庫県", "奈良県") ~ "近畿都市圏",
-      prefecture %in% c("愛知県", "岐阜県", "三重県") ~ "中京圏",
-      prefecture %in% c("茨城県", "栃木県", "群馬県", "滋賀県", "和歌山県", "静岡県") ~ "都市圏近郊",
+      prefecture %in% c(
+        "東京都", "神奈川県", "埼玉県", "千葉県"
+      ) ~ "首都圏",
+      
+      prefecture %in% c(
+        "大阪府", "京都府", "兵庫県", "奈良県"
+      ) ~ "近畿都市圏",
+      
+      prefecture %in% c(
+        "愛知県", "岐阜県", "三重県"
+      ) ~ "中京圏",
+      
+      prefecture %in% c(
+        "茨城県", "栃木県", "群馬県", "滋賀県",
+        "和歌山県", "静岡県"
+      ) ~ "都市圏近郊",
+      
       TRUE ~ "地方圏"
     )
   ) |>
-  dplyr::relocate(metro_area, .after = region)|>
+  dplyr::relocate(metro_area, .after = region) |>
   dplyr::mutate(
-    pre_education_expenses_perstudents = pre_education_expense / pre_student_number,
     metro_dummy = dplyr::case_when(
       metro_area %in% "地方圏" ~ 0,
       TRUE ~ 1
     ),
-    prefecture = factor(prefecture)) 
-
-panel_data_pre <- panel_data_pre |>
+    prefecture = factor(prefecture)
+  ) |>
   dplyr::arrange(new_year, .by_group = TRUE) |>
-  dplyr::group_by(prefecture) |> 
-  dplyr::mutate(lag_pre_education_expenses_perstudents = (pre_education_expenses_perstudents - dplyr::lag(pre_education_expenses_perstudents))/dplyr::lag(pre_education_expenses_perstudents),
-                lag_pre_education_expenses_perstudents = dplyr::coalesce(lag_pre_education_expenses_perstudents, 0))|>
+  dplyr::group_by(prefecture) |>
+  dplyr::mutate(
+    lag_pre_education_expenses_perstudents =
+      (
+        pre_education_expenses_perstudents -
+          dplyr::lag(pre_education_expenses_perstudents)
+      ) /
+      dplyr::lag(pre_education_expenses_perstudents),
+    
+    lag_pre_education_expenses_perstudents =
+      dplyr::coalesce(
+        lag_pre_education_expenses_perstudents,
+        0
+      )
+  ) |>
   dplyr::ungroup()
-
 
 # final_data は前回作成した縦持ち(Long型)のパネルデータと仮定
 diff_data <- panel_data_pre |>

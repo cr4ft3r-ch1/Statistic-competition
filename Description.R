@@ -88,7 +88,7 @@ plot_data <- panel_data_pre |>
 plot_before <- ggplot(plot_data, aes(x = factor(new_year), y = pre_education_expenses_perstudents)) +
   geom_boxplot(fill = "lightpink", outlier.shape = NA) + # 外れ値は非表示にして箱を見やすくする
   #coord_cartesian(ylim = quantile(plot_data$education_expenses_perstudents, c(0.05, 0.95), na.rm=TRUE)) + # 上下5%をカットしてズーム
-  coord_cartesian(ylim = c(350, 900)) +
+  coord_cartesian(ylim = c(550, 1100)) +
   theme_minimal() +
   labs(title = "Before: 元の1人当たり教育費", x = "年度", y = "1人当たり教育費")
 
@@ -96,7 +96,7 @@ plot_before <- ggplot(plot_data, aes(x = factor(new_year), y = pre_education_exp
 plot_after <- ggplot(plot_data, aes(x = factor(new_year), y = pre_edu_exp_adjusted)) +
   geom_boxplot(fill = "lightblue", outlier.shape = NA) +
   #coord_cartesian(ylim = quantile(plot_data$edu_exp_adjusted, c(0.05, 0.95), na.rm=TRUE)) +
-  coord_cartesian(ylim = c(350, 900)) +
+  coord_cartesian(ylim = c(550, 1100)) +
   theme_minimal() +
   labs(title = "After: 時間固定効果 除去後", x = "年度", y = "調整後 1人当たり教育費")
 
@@ -126,7 +126,7 @@ ggplot2::ggplot(plot_data, aes(x = new_year, y = log(pre_edu_exp_adjusted), colo
 
 
 
-
+#2023年のデータでとりあえずデータの特徴をつかもう`
 modelsummary::datasummary(
    All(data_2023)~ N + Mean + SD + Min + Max,
    data = data_2023,
@@ -136,14 +136,14 @@ modelsummary::datasummary(
 # 教育費の分布をプロット
 education_distribution <- ggplot2::ggplot() +
    ggplot2::geom_histogram(data = data_2023, 
-                           mapping = aes(x = log10(pre_education_expense)), 
+                           mapping = aes(x = log10(pre_education_expences)), 
                           binwidth = 0.1)
                           
 
 #予算に占める教育費の割合をプロット
 education_percentage <- ggplot2::ggplot() +
   ggplot2::geom_histogram(data = data_2023, 
-                          mapping = aes(x = (pre_education_expense/pre_total_expenditure)), 
+                          mapping = aes(x = (pre_education_expences/pre_total_expenditure)), 
                           binwidth = 0.005)
 plot(education_percentage)
 
