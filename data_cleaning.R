@@ -77,14 +77,20 @@ pop_data_2021 <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
     "地域コード", 
     "population" = `人`  # 列名は「人」
   )
-pop_data_2022 <- read_csv("市区町村別人口_2022.csv", skip = 5) |>
+pop_data_2022 <- readr::read_csv(
+  "市区町村別人口_2022.csv",
+  skip = 5,
+  locale = readr::locale(encoding = "CP932")
+) |>
   dplyr::mutate(
-    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
-    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+    地域コード = paste0(
+      "R",
+      stringr::str_sub(`団体コード`, 1, 5)
+    )
   ) |>
   dplyr::select(
-    "地域コード", 
-    "population" = `人`  # 列名は「人」
+    地域コード,
+    population = `人`
   )
 
 # 本データの読み込み
