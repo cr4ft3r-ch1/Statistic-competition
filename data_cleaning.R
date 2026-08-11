@@ -525,7 +525,7 @@ process_shapefile <- function(shp_file) {
 # "shapefile" の部分は実際のフォルダパスに合わせてください
 shp_files <- list.files(
   path = "C:/Users/c4ft3/R/Statistic-competition/data", 
-  pattern = "\\.shp$", 
+  pattern = "^N03-20250101_[0-9]{2}\\.shp$", 
   full.names = TRUE
 )
 
@@ -533,10 +533,27 @@ shp_files <- list.files(
 print(length(shp_files))
 
 # 3. 全県の一括処理と結合
-map_data_muni_all <- purrr::map(shp_files, process_shapefile) |>
-  dplyr::bind_rows()
+# map_data_muni_all <- purrr::map(shp_files, process_shapefile) |>
+#   dplyr::bind_rows()
+# saveRDS(
+#   map_data_muni_all,
+#   "map_data_muni_all.rds"
+# )
+map_data_muni_all <- readRDS(
+  "map_data_muni_all.rds"
+)
 
 # 結果の確認（行数が約1700前後になっていれば成功）
 print(nrow(map_data_muni_all))
 
+# muni_complete_data <- map_data_muni_all |>
+#   dplyr::left_join(panel_data_muni, by = "region_code")
+
+# saveRDS(
+#   muni_complete_data,
+#   "muni_complete_data.rds"
+# )
+muni_complete_data <- readRDS(
+  "muni_complete_data.rds"
+)
 
