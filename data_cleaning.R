@@ -18,6 +18,10 @@ library(fixest)
 library(plm)
 library(spdep)
 library(spatialreg)
+library(sf)
+library(dplyr)
+library(stringr)
+library(purrr)
 # 1. 住基人口データの読み込みとコードの抽出・加工
 pop_data_2016 <- read_csv("市区町村別人口_2016.csv", skip = 3)|>
   dplyr::mutate(
@@ -443,4 +447,90 @@ avg_data <- pre_complete_data |>
     ),
     metro_dummy = first(metro_dummy)
   )
+
+
+
+
+
+
+# 市区町村単位の空間データを作成
+
+
+# 1. 処理関数の定義
+process_shapefile <- function(shp_file) {
+  # Shapefileの読み込み
+  map_data <- sf::st_read(
+    shp_file,
+    options = "ENCODING=CP932",
+    quiet = TRUE
+  )
+  
+  # コード変換とディゾルブ（融合）処理
+  map_data_formatted <- map_data |>
+    dplyr::mutate(
+      raw_code = as.character(N03_007),
+      
+      # 全国の政令指定都市の行政区を市コード（下2桁00など）に集約
+      # 警告: 判定順序が重要（例外的なコードを先に判定する）
+      aggregated_code = dplyr::case_when(
+        # 例外的な政令市（下3桁が100ではないもの）を先に処理
+        stringr::str_starts(raw_code, "1413") ~ "14130", # 川崎市
+        stringr::str_starts(raw_code, "1415") ~ "14150", # 相模原市
+        stringr::str_starts(raw_code, "2213") ~ "22130", # 浜松市
+        stringr::str_starts(raw_code, "2714") ~ "27140", # 堺市
+        stringr::str_starts(raw_code, "4013") ~ "40130", # 福岡市
+        
+        # 通常の政令市（上3桁 + 00）
+        stringr::str_starts(raw_code, "011") ~ "01100", # 札幌市
+        stringr::str_starts(raw_code, "041") ~ "04100", # 仙台市
+        stringr::str_starts(raw_code, "111") ~ "11100", # さいたま市
+        stringr::str_starts(raw_code, "121") ~ "12100", # 千葉市
+        stringr::str_starts(raw_code, "141") ~ "14100", # 横浜市（相模原・川崎の後に判定）
+        stringr::str_starts(raw_code, "151") ~ "15100", # 新潟市
+        stringr::str_starts(raw_code, "221") ~ "22100", # 静岡市（浜松の後に判定）
+        stringr::str_starts(raw_code, "231") ~ "23100", # 名古屋市
+        stringr::str_starts(raw_code, "261") ~ "26100", # 京都市
+        stringr::str_starts(raw_code, "271") ~ "27100", # 大阪市（堺の後に判定）
+        stringr::str_starts(raw_code, "281") ~ "28100", # 神戸市
+        stringr::str_starts(raw_code, "331") ~ "33100", # 岡山市
+        stringr::str_starts(raw_code, "341") ~ "34100", # 広島市
+        stringr::str_starts(raw_code, "401") ~ "40100", # 北九州市（福岡の後に判定）
+        stringr::str_starts(raw_code, "431") ~ "43100", # 熊本市
+        
+        TRUE ~ raw_code # 政令市以外はそのまま
+      ),
+      
+      # パネルデータ結合用のコード作成
+      region_code = paste0("R", aggregated_code)
+    ) |>
+    # NAの除外（海上境界線など）
+    dplyr::filter(!is.na(raw_code)) |>
+    # ジオメトリ情報のみを残す
+    dplyr::select(region_code, geometry) |>
+    # region_codeでグループ化し、図形を結合（ディゾルブ）
+    dplyr::group_by(region_code) |>
+    dplyr::summarise(.groups = "drop")
+  
+  return(map_data_formatted)
+}
+
+
+# 2. ファイルリストの取得
+# "shapefile" の部分は実際のフォルダパスに合わせてください
+shp_files <- list.files(
+  path = "C:/Users/c4ft3/R/Statistic-competition/data", 
+  pattern = "\\.shp$", 
+  full.names = TRUE
+)
+
+# ファイル数の確認（47になっていればOK）
+print(length(shp_files))
+
+# 3. 全県の一括処理と結合
+map_data_muni_all <- purrr::map(shp_files, process_shapefile) |>
+  dplyr::bind_rows()
+
+# 結果の確認（行数が約1700前後になっていれば成功）
+print(nrow(map_data_muni_all))
+
 
