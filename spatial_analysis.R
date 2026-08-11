@@ -1,6 +1,8 @@
 source("data_cleaning.R")
 prefecture_nb <- readRDS("prefecture_nb.rds")
 prefecture_listw <- readRDS("prefecture_listw.rds")
+muni_nb <- readRDS("muni_nb.rds")
+muni_listw <- readRDS("muni_listw.rds")
 
 # コロプレス図(神奈川県のみ) 
 
@@ -150,13 +152,13 @@ ggplot2::ggplot(data = test_data_3) +
 
 
 # # 1. 隣接関係のリストを作成（ポリゴンデータから抽出）
-#prefecture_nb <- spdep::poly2nb(test_data_3$geometry, queen = TRUE)
-#saveRDS(prefecture_nb, "prefecture_nb.rds")
+# prefecture_nb <- spdep::poly2nb(test_data_3$geometry, queen = TRUE)
+# saveRDS(prefecture_nb, "prefecture_nb.rds")
 # 
 # # 2. 隣接関係の重み付け（行標準化: style = "W"）
 # # これにより、「隣接する全自治体の平均値」を計算するための重みができる
-#prefecture_listw <- spdep::nb2listw(prefecture_nb, style = "W", zero.policy = TRUE)
-#saveRDS(prefecture_listw, "prefecture_listw.rds")
+# prefecture_listw <- spdep::nb2listw(prefecture_nb, style = "W", zero.policy = TRUE)
+# saveRDS(prefecture_listw, "prefecture_listw.rds")
 # 確認: 各自治体が平均して何個の自治体と接しているか等のサマリーを表示
 prefecture_nb <- readRDS("prefecture_nb.rds")
 prefecture_listw <- readRDS("prefecture_listw.rds")
@@ -579,4 +581,68 @@ print(result_2020)
 result_2021 <- run_lisa(pre_complete_data, 2021)
 print(result_2021)
 
+
+
+
+# 市区町村単位の分析(空間行列は同様に作成)
+
+
+# 市区町村データから地図データを作成
+muni_data_2019 <- muni_complete_data |>
+  dplyr::filter(new_year == 2019)
+
+# コロプレス図
+ggplot2::ggplot(data = muni_data_2019) +
+  ggplot2::geom_sf(
+    ggplot2::aes(fill = education_expenses_perstudents),
+    color = "black",
+    size = 0.1
+  ) +
+  scale_fill_viridis_c(
+    option = "plasma",
+    name = "1人あたり教育費"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "全国：1人当たり教育費の空間的分布（2019年）"
+  ) +
+  theme(
+    legend.position = "bottom",
+    axis.text = element_blank()
+  )
+
+
+# # 市区町村の隣接関係
+# muni_nb <- spdep::poly2nb(
+#   muni_data_2019$geometry,
+#   queen = TRUE
+# )
+#saveRDS(muni_nb, "muni_nb.rds")
+
+# 隣接関係の確認
+summary(muni_nb)
+
+# 孤立している地域の確認
+muni_data_2019$region_code[
+  which(spdep::card(muni_nb) == 0)
+]
+# もっとも隣接している地域の確認
+muni_data_2019$region_code[
+  which(spdep::card(muni_nb) == 20)
+]
+
+# 60個のサブグラフを確認
+# 各自治体がどの連結成分（sub-graph）に属するか
+muni_components <- spdep::n.comp.nb(muni_nb)
+muni_components$nc
+table(table(muni_components$comp.id))
+
+# # 空間ウェイト
+# muni_listw <- spdep::nb2listw(
+#   muni_nb,
+#   style = "W",
+#   zero.policy = TRUE
+# )
+# 
+# saveRDS(muni_listw, "muni_listw.rds")
 
