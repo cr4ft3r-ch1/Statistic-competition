@@ -199,6 +199,7 @@ add_student_number <- function(base_data, target_year_data) {
   return(result_data)
 }
 
+
 data_2022_merged <- add_student_number(data_2026,data_2024)
 data_2021_merged <- add_student_number(data_2025,data_2023)
 data_2020_merged <- add_student_number(data_2024,data_2022)
@@ -207,7 +208,53 @@ data_2019_merged <- add_student_number(data_2023,data_2021)
 #data_2017_merged <- add_student_number(data_2020,data_2019)
 #data_2016_merged <- add_student_number(data_2019,data_2018)
 
+# 欠損値用の再計算
+recalculate_school_numbers <- function(data) {
+  
+  data |>
+    dplyr::mutate(
+      
+      # 生徒数の再計算
+      student_number = dplyr::if_else(
+        is.na(student_number) | student_number == 0,
+        rowSums(
+          dplyr::across(
+            c(
+              小学校児童数,
+              中学校生徒数,
+              義務教育学校前期課程児童数,
+              義務教育学校後期課程生徒数
+            ),
+            ~ dplyr::coalesce(.x, 0)
+          )
+        ),
+        student_number
+      ),
+      
+      # 教員数の再計算
+      teacher_number = dplyr::if_else(
+        is.na(teacher_number) | teacher_number == 0,
+        rowSums(
+          dplyr::across(
+            c(
+              小学校教員数,
+              中学校教員数,
+              義務教育学校教員数
+            ),
+            ~ dplyr::coalesce(.x, 0)
+          )
+        ),
+        teacher_number
+      )
+    )
+}
+data_2022_merged <- recalculate_school_numbers(data_2022_merged)
 
+data_2021_merged <- recalculate_school_numbers(data_2021_merged)
+
+data_2020_merged <- recalculate_school_numbers(data_2020_merged)
+
+data_2019_merged <- recalculate_school_numbers(data_2019_merged)
 
 
 
@@ -546,14 +593,26 @@ map_data_muni_all <- readRDS(
 # 結果の確認（行数が約1700前後になっていれば成功）
 print(nrow(map_data_muni_all))
 
-muni_complete_data <- map_data_muni_all |>
-  dplyr::left_join(panel_data_muni, by = "region_code")
-saveRDS(
-  muni_complete_data,
-  "muni_complete_data.rds"
- )
+# muni_complete_data <- map_data_muni_all |>
+#   dplyr::left_join(panel_data_muni, by = "region_code")
+# saveRDS(
+#   muni_complete_data,
+#   "muni_complete_data.rds"
+#  )
 muni_complete_data <- readRDS(
   "muni_complete_data.rds"
 )
 
 summary(panel_data_muni$education_expenses_perstudents)
+
+
+panel_data_muni |>
+  dplyr::filter(is.na(education_expenses_perstudents)) |>
+  dplyr::select(
+    region_code,
+    prefecture,
+    
+    year,
+    education_expenses_perstudents
+  )
+
