@@ -186,8 +186,8 @@ add_student_number <- function(base_data, target_year_data) {
   
   # 必要な列だけを計算して切り出す
   clean_target_data <- target_year_data |> 
-    dplyr::mutate(student_number = 小学校児童数 + 中学校生徒数,
-                  teacher_number = 小学校教員数 + 中学校教員数) |> 
+    dplyr::mutate(student_number = 小学校児童数 + 中学校生徒数 + 義務教育学校前期課程児童数 + 義務教育学校後期課程生徒数,
+                  teacher_number = 小学校教員数 + 中学校教員数 + 義務教育学校教員数) |> 
     dplyr::select(地域コード, student_number, teacher_number)
   
   # ベースとなるデータに結合して返す
@@ -203,8 +203,8 @@ data_2022_merged <- add_student_number(data_2026,data_2024)
 data_2021_merged <- add_student_number(data_2025,data_2023)
 data_2020_merged <- add_student_number(data_2024,data_2022)
 data_2019_merged <- add_student_number(data_2023,data_2021)
-data_2018_merged <- add_student_number(data_2021,data_2020)
-data_2017_merged <- add_student_number(data_2020,data_2019)
+#data_2018_merged <- add_student_number(data_2021,data_2020)
+#data_2017_merged <- add_student_number(data_2020,data_2019)
 #data_2016_merged <- add_student_number(data_2019,data_2018)
 
 
@@ -280,7 +280,7 @@ f_muni <- function(x) {
 # 縦方向への結合後に、整形関数を一括適用する
 #panel_data_muni <- bind_rows(data_2016_merged, data_2017_merged,data_2018_merged, data_2019_merged, data_2020_merged,data_2021_merged) |> 
 #  f_muni()
-panel_data_muni <- bind_rows(data_2017_merged, data_2018_merged, data_2019_merged, data_2020_merged, data_2021_merged, data_2022_merged) |> 
+panel_data_muni <- bind_rows(data_2019_merged, data_2020_merged, data_2021_merged, data_2022_merged) |> 
   f_muni()
 # 県で分ける
 panel_data_pre <- panel_data_muni |> 
@@ -523,14 +523,14 @@ process_shapefile <- function(shp_file) {
 
 # 2. ファイルリストの取得
 # "shapefile" の部分は実際のフォルダパスに合わせてください
-shp_files <- list.files(
-  path = "C:/Users/c4ft3/R/Statistic-competition/data", 
-  pattern = "^N03-20250101_[0-9]{2}\\.shp$", 
-  full.names = TRUE
-)
-
-# ファイル数の確認（47になっていればOK）
-print(length(shp_files))
+# shp_files <- list.files(
+#   path = "C:/Users/c4ft3/R/Statistic-competition/data", 
+#   pattern = "^N03-20250101_[0-9]{2}\\.shp$", 
+#   full.names = TRUE
+# )
+# 
+# # ファイル数の確認（47になっていればOK）
+# print(length(shp_files))
 
 # 3. 全県の一括処理と結合
 # map_data_muni_all <- purrr::map(shp_files, process_shapefile) |>
@@ -546,14 +546,14 @@ map_data_muni_all <- readRDS(
 # 結果の確認（行数が約1700前後になっていれば成功）
 print(nrow(map_data_muni_all))
 
-# muni_complete_data <- map_data_muni_all |>
-#   dplyr::left_join(panel_data_muni, by = "region_code")
-
-# saveRDS(
-#   muni_complete_data,
-#   "muni_complete_data.rds"
-# )
+muni_complete_data <- map_data_muni_all |>
+  dplyr::left_join(panel_data_muni, by = "region_code")
+saveRDS(
+  muni_complete_data,
+  "muni_complete_data.rds"
+ )
 muni_complete_data <- readRDS(
   "muni_complete_data.rds"
 )
 
+summary(panel_data_muni$education_expenses_perstudents)
