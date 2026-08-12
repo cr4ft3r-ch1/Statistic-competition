@@ -637,6 +637,22 @@ muni_components <- spdep::n.comp.nb(muni_nb)
 muni_components$nc
 table(table(muni_components$comp.id))
 
+muni_component_data <- muni_data_2019 |>
+  dplyr::mutate(
+    component = muni_components$comp.id
+  )
+
+ggplot2::ggplot(muni_component_data) +
+  ggplot2::geom_sf(
+    ggplot2::aes(fill = factor(component)),
+    color = NA
+  ) +
+  ggplot2::theme_void() +
+  ggplot2::labs(
+    title = "市区町村の連結成分（Connected Components）"
+  ) +
+  ggplot2::guides(fill = "none")
+
 # # 空間ウェイト
 # muni_listw <- spdep::nb2listw(
 #   muni_nb,
@@ -646,3 +662,92 @@ table(table(muni_components$comp.id))
 # 
 # saveRDS(muni_listw, "muni_listw.rds")
 
+#Moran's I を行う(2019)
+muni_moran_test_result <- spdep::moran.test(
+  muni_component_data$education_expenses_perstudents, 
+  listw = muni_listw, 
+  zero.policy = TRUE
+)
+
+print(muni_moran_test_result)
+muni_local_moran_result <- spdep::localmoran(
+  muni_component_data$education_expenses_perstudents,
+  listw = muni_listw,
+  zero.policy = TRUE
+)
+print(muni_local_moran_result)
+
+lisa_result_muni <- data.frame(
+  municipality = muni_component_data$municipality,
+  Ii = muni_local_moran_result[, "Ii"],
+  Z_Ii = muni_local_moran_result[, "Z.Ii"],
+  p_value = muni_local_moran_result[, "Pr(z != E(Ii))"],
+  cluster = attr(muni_local_moran_result, "quadr")[, "mean"]
+)
+lisa_result_muni |>
+  filter(p_value < 0.05)
+
+# ※ p-value < 0.05 であれば、「教育費は空間的にランダムではなく、隣接地域と似通っている」と結論づけられる。
+# 比較用のベースラインOLSモデル（神奈川県単年度版）
+ols_model <- lm(
+  education_expenses_perstudents ~  log(population) + ordinary_balance_ratio,
+  data = complete_data_test
+)
+
+# 空間自己回帰モデル（SAR）の推計
+# lagsarlm関数を用いて、被説明変数に空間ラグを組み込む
+sar_model <- spatialreg::lagsarlm(
+  education_expenses_perstudents ~ log(population) + ordinary_balance_ratio,
+  data = complete_data_test,
+  listw = kanagawa_listw,
+  zero.policy = TRUE
+)
+
+# 結果の表示
+summary(sar_model)
+summary(ols_model)
+
+#各年度のMoran's I を集計する
+#2020年
+muni_data_2020 <- muni_complete_data |> 
+  dplyr::filter(new_year == 2020)
+muni_moran_test_result_2020 <- spdep::moran.test(
+  muni_data_2020$education_expenses_perstudents, 
+  listw = muni_listw, 
+  zero.policy = TRUE
+)
+
+print(muni_moran_test_result_2020)
+#2021年
+muni_data_2021 <- muni_complete_data |> 
+  dplyr::filter(new_year == 2021)
+muni_moran_test_result_2021 <- spdep::moran.test(
+  muni_data_2021$education_expenses_perstudents, 
+  listw = muni_listw, 
+  zero.policy = TRUE
+)
+
+print(muni_moran_test_result_2021)
+
+muni_data_2022 <- muni_complete_data |> 
+  dplyr::filter(new_year == 2022)
+muni_moran_test_result_2022 <- spdep::moran.test(
+  muni_data_2022$education_expenses_perstudents, 
+  listw = muni_listw, 
+  zero.policy = TRUE
+)
+
+print(muni_moran_test_result_2022)
+
+setdiff(
+  muni_complete_data |> dplyr::filter(new_year == 2019) |> dplyr::pull(region_code),
+  muni_complete_data |> dplyr::filter(new_year == 2021) |> dplyr::pull(region_code)
+)
+setdiff(
+  muni_complete_data |> dplyr::filter(new_year == 2019) |> dplyr::pull(region_code),
+  muni_complete_data |> dplyr::filter(new_year == 2020) |> dplyr::pull(region_code)
+)
+setdiff(
+  muni_complete_data |> dplyr::filter(new_year == 2019) |> dplyr::pull(region_code),
+  muni_complete_data |> dplyr::filter(new_year == 2022) |> dplyr::pull(region_code)
+)

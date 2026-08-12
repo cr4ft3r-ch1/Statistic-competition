@@ -160,13 +160,28 @@ data_2025 <- read_csv(
 
 data_2026 <- read_csv(
   "SSDSE-A-2026.csv",
-  locale = locale(encoding = "CP932"),
+  locale = locale(encoding = "UTF-8"),
   skip = 2
 )|> dplyr::mutate(year = 2026,
                   education_year = 2022,
                   student_year = 2024)|>
   dplyr::inner_join(pop_data_2021, by = "地域コード")
 
+test_2025 <- read_csv(
+  "SSDSE-A-2025.csv",
+  locale = locale(encoding = "CP932"),
+  skip = 2
+)
+colnames(test_2025)
+test_2025 |>
+  dplyr::filter(stringr::str_detect(市区町村, "ニセコ"))
+test_2025 |>
+  dplyr::filter(stringr::str_detect(市区町村, "ニセコ")) |>
+  dplyr::select(地域コード, 市区町村)
+
+pop_data_2021 |>
+  dplyr::filter(stringr::str_detect(地域コード, "R01395")) |>
+  dplyr::select(地域コード)
 
 # # --- 年度ごとの設定を tibble で定義 ---
 # ssdse_config <- tibble::tribble(
