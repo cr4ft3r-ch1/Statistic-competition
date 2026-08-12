@@ -55,7 +55,7 @@ kanagawa_moran_test_result <- spdep::moran.test(
   zero.policy = TRUE
 )
 
-print(moran_test_result)
+print(kanagawa_moran_test_result)
 
 # 神奈川県のlocal moran's test
 kanagawa_local_moran_result <- spdep::localmoran(
@@ -739,15 +739,4 @@ muni_moran_test_result_2022 <- spdep::moran.test(
 
 print(muni_moran_test_result_2022)
 
-setdiff(
-  muni_complete_data |> dplyr::filter(new_year == 2019) |> dplyr::pull(region_code),
-  muni_complete_data |> dplyr::filter(new_year == 2021) |> dplyr::pull(region_code)
-)
-setdiff(
-  muni_complete_data |> dplyr::filter(new_year == 2019) |> dplyr::pull(region_code),
-  muni_complete_data |> dplyr::filter(new_year == 2020) |> dplyr::pull(region_code)
-)
-setdiff(
-  muni_complete_data |> dplyr::filter(new_year == 2019) |> dplyr::pull(region_code),
-  muni_complete_data |> dplyr::filter(new_year == 2022) |> dplyr::pull(region_code)
-)
+

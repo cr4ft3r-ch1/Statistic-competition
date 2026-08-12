@@ -41,41 +41,81 @@ pop_data_2017 <- read_csv("市区町村別人口_2017.csv", skip = 3)|>
     "地域コード", 
     "population" = `人`  # 列名は「人」
   )
-pop_data_2018 <- read_csv("市区町村別人口_2018.csv", skip = 3)|>
+pop_data_2018 <- readr::read_csv(
+  "市区町村別人口_2018.csv",
+skip = 5,
+locale = readr::locale(encoding = "CP932"),
+col_types = readr::cols(
+  団体コード = readr::col_character()
+),
+show_col_types = FALSE
+) |>
   dplyr::mutate(
-    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
-    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+    地域コード = paste0(
+      "R",
+      stringr::str_sub(団体コード, 1, 5)
+    )
   ) |>
   dplyr::select(
-    "地域コード", 
-    "population" = `人`  # 列名は「人」
+    地域コード,
+    population = `人`
   )
-pop_data_2019 <- read_csv("市区町村別人口_2019.csv", skip = 3)|>
+pop_data_2019 <- readr::read_csv(
+  "市区町村別人口_2019.csv",
+  skip = 5,
+  locale = readr::locale(encoding = "CP932"),
+  col_types = readr::cols(
+    団体コード = readr::col_character()
+  ),
+  show_col_types = FALSE
+) |>
   dplyr::mutate(
-    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
-    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+    地域コード = paste0(
+      "R",
+      stringr::str_sub(団体コード, 1, 5)
+    )
   ) |>
   dplyr::select(
-    "地域コード", 
-    "population" = `人`  # 列名は「人」
+    地域コード,
+    population = `人`
   )
-pop_data_2020 <- read_csv("市区町村別人口_2020.csv", skip = 3)|>
+pop_data_2020 <- readr::read_csv(
+  "市区町村別人口_2020.csv",
+  skip = 5,
+  locale = readr::locale(encoding = "CP932"),
+  col_types = readr::cols(
+    団体コード = readr::col_character()
+  ),
+  show_col_types = FALSE
+) |>
   dplyr::mutate(
-    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
-    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+    地域コード = paste0(
+      "R",
+      stringr::str_sub(団体コード, 1, 5)
+    )
   ) |>
   dplyr::select(
-    "地域コード", 
-    "population" = `人`  # 列名は「人」
+    地域コード,
+    population = `人`
   )
-pop_data_2021 <- read_csv("市区町村別人口_2021.csv", skip = 5) |>
+pop_data_2021 <- readr::read_csv(
+  "市区町村別人口_2021.csv",
+  skip = 5,
+  # locale = readr::locale(encoding = "CP932"),
+  col_types = readr::cols(
+    団体コード = readr::col_character()
+  ),
+  show_col_types = FALSE
+) |>
   dplyr::mutate(
-    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
-    "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+    地域コード = paste0(
+      "R",
+      stringr::str_sub(団体コード, 1, 5)
+    )
   ) |>
   dplyr::select(
-    "地域コード", 
-    "population" = `人`  # 列名は「人」
+    地域コード,
+    population = `人`
   )
 
 pop_data_2022 <- readr::read_csv(
@@ -109,46 +149,52 @@ pop_data_2022 <- readr::read_csv(
 
 data_2019 <- read_csv(
   "SSDSE-A-2019.csv",
-  locale = locale(encoding = "CP932"),
-  skip = 2
+  locale = readr::locale(encoding = "CP932"),
+  skip = 2,
+  show_col_types = FALSE
 )|> dplyr::mutate(year = 2019,
                   education_year = 2016,
                   student_year = 2017)|>
   dplyr::inner_join(pop_data_2016, by = "地域コード")
 data_2020 <- read_csv(
   "SSDSE-A-2020.csv",
-  locale = locale(encoding = "CP932"),
-  skip = 2
+  locale = readr::locale(encoding = "CP932"),
+  skip = 2,
+  show_col_types = FALSE
 )|> dplyr::mutate(year = 2020,
                   education_year = 2017,
                   student_year = 2018)|>
   dplyr::inner_join(pop_data_2017, by = "地域コード")
 data_2021 <- read_csv(
   "SSDSE-A-2021.csv",
-  locale = locale(encoding = "CP932"),
-  skip = 2
+  locale = readr::locale(encoding = "CP932"),
+  skip = 2,
+  show_col_types = FALSE
 )|> dplyr::mutate(year = 2021,
                   education_year = 2018,
                   student_year = 2019)|>
   dplyr::inner_join(pop_data_2018, by = "地域コード")
 data_2022 <- read_csv(
   "SSDSE-A-2022.csv",
-  locale = locale(encoding = "CP932"),
-  skip = 2
+  locale = readr::locale(encoding = "CP932"),
+  skip = 2,
+  show_col_types = FALSE
 )|> dplyr::mutate(year = 2021,
                   student_year = 2020)
 data_2023 <- read_csv(
   "SSDSE-A-2023.csv",
-  locale = locale(encoding = "CP932"),
-  skip = 2
+  locale = readr::locale(encoding = "CP932"),
+  skip = 2,
+  show_col_types = FALSE
 )|> dplyr::mutate(year = 2023,
                   education_year = 2019,
                   student_year = 2021)|>
   dplyr::inner_join(pop_data_2019, by = "地域コード")
 data_2024 <- read_csv(
   "SSDSE-A-2024.csv",
-  locale = locale(encoding = "CP932"),
-  skip = 2
+  locale = readr::locale(encoding = "CP932"),
+  skip = 2,
+  show_col_types = FALSE
 )|> dplyr::mutate(year = 2024,
                   education_year = 2020,
                   student_year = 2022)|>
@@ -156,8 +202,9 @@ data_2024 <- read_csv(
 
 data_2025 <- read_csv(
   "SSDSE-A-2025.csv",
-  locale = locale(encoding = "CP932"),
-  skip = 2
+  locale = readr::locale(encoding = "CP932"),
+  skip = 2,
+  show_col_types = FALSE
 )|> dplyr::mutate(year = 2025,
                   education_year = 2021,
                   student_year = 2023)|>
