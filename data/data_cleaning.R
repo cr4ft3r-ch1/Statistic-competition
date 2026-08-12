@@ -27,11 +27,20 @@ pop_data_2016 <- read_csv("市区町村別人口_2016.csv", skip = 3)|>
   dplyr::mutate(
     # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
     "地域コード" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
-  ) |>
-  dplyr::select(
-    "地域コード", 
-    "population" = `人`  # 列名は「人」
-  )
+   ) |>
+dplyr::select(
+  "地域コード",
+  "population" = `人`  # 列名は「人」
+)
+# 那珂川町が那珂川市に、富谷町が富谷市なったことへの対応
+pop_data_2016 <- pop_data_2016 |>
+  dplyr::mutate(
+    地域コード = dplyr::case_when(
+      地域コード == "R40305" ~ "R40231",  # 那珂川町 → 那珂川市
+      地域コード == "R04423" ~ "R04216",  # 富谷町 → 富谷市
+      TRUE ~ 地域コード
+    )
+  ) 
 pop_data_2017 <- read_csv("市区町村別人口_2017.csv", skip = 3)|>
   dplyr::mutate(
     # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
@@ -41,10 +50,21 @@ pop_data_2017 <- read_csv("市区町村別人口_2017.csv", skip = 3)|>
     "地域コード", 
     "population" = `人`  # 列名は「人」
   )
+
+# 那珂川町が那珂川市になったことへの対応
+pop_data_2017 <- pop_data_2017 |>
+  dplyr::mutate(
+    地域コード = dplyr::if_else(
+      地域コード == "R40305",
+      "R40231",
+      地域コード
+    )
+  )
+
 pop_data_2018 <- readr::read_csv(
   "市区町村別人口_2018.csv",
-skip = 5,
-locale = readr::locale(encoding = "CP932"),
+skip = 3,
+# locale = readr::locale(encoding = "CP932"),
 col_types = readr::cols(
   団体コード = readr::col_character()
 ),
@@ -60,10 +80,21 @@ show_col_types = FALSE
     地域コード,
     population = `人`
   )
+# 那珂川町が那珂川市になったことへの対応
+pop_data_2018 <- pop_data_2018 |>
+  dplyr::mutate(
+    地域コード = dplyr::if_else(
+      地域コード == "R40305",
+      "R40231",
+      地域コード
+    )
+  )
+
+
 pop_data_2019 <- readr::read_csv(
   "市区町村別人口_2019.csv",
-  skip = 5,
-  locale = readr::locale(encoding = "CP932"),
+  skip = 3,
+  # locale = readr::locale(encoding = "CP932"),
   col_types = readr::cols(
     団体コード = readr::col_character()
   ),
@@ -81,8 +112,8 @@ pop_data_2019 <- readr::read_csv(
   )
 pop_data_2020 <- readr::read_csv(
   "市区町村別人口_2020.csv",
-  skip = 5,
-  locale = readr::locale(encoding = "CP932"),
+  skip = 3,
+  # locale = readr::locale(encoding = "CP932"),
   col_types = readr::cols(
     団体コード = readr::col_character()
   ),
@@ -99,9 +130,9 @@ pop_data_2020 <- readr::read_csv(
     population = `人`
   )
 pop_data_2021 <- readr::read_csv(
-  "市区町村別人口_2021.csv",
+  "市区町村別人口_2021_2.csv",
   skip = 5,
-  # locale = readr::locale(encoding = "CP932"),
+  locale = readr::locale(encoding = "CP932"),
   col_types = readr::cols(
     団体コード = readr::col_character()
   ),
@@ -147,15 +178,31 @@ pop_data_2022 <- readr::read_csv(
 # )|> dplyr::mutate(year = 2018,
 #                   education_year = 2015)
 
-data_2019 <- read_csv(
+data_2019 <- readr::read_csv(
   "SSDSE-A-2019.csv",
   locale = readr::locale(encoding = "CP932"),
   skip = 2,
   show_col_types = FALSE
-)|> dplyr::mutate(year = 2019,
-                  education_year = 2016,
-                  student_year = 2017)|>
-  dplyr::inner_join(pop_data_2016, by = "地域コード")
+) |>
+  dplyr::mutate(
+    year = 2019,
+    education_year = 2016,
+    student_year = 2017
+  )
+
+# 那珂川町が那珂川市になったことへの対応
+data_2019 <- data_2019 |>
+  dplyr::mutate(
+    地域コード = dplyr::case_when(
+      地域コード == "R40305" ~ "R40231",  # 那珂川町 → 那珂川市
+      TRUE ~ 地域コード
+    )
+  ) |>
+  dplyr::inner_join(
+    pop_data_2016,
+    by = "地域コード"
+  )
+  
 data_2020 <- read_csv(
   "SSDSE-A-2020.csv",
   locale = readr::locale(encoding = "CP932"),
@@ -172,8 +219,12 @@ data_2021 <- read_csv(
   show_col_types = FALSE
 )|> dplyr::mutate(year = 2021,
                   education_year = 2018,
-                  student_year = 2019)|>
-  dplyr::inner_join(pop_data_2018, by = "地域コード")
+                  student_year = 2019) |>
+   dplyr::inner_join(pop_data_2018, by = "地域コード")
+
+
+
+
 data_2022 <- read_csv(
   "SSDSE-A-2022.csv",
   locale = readr::locale(encoding = "CP932"),
