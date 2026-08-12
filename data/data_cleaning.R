@@ -165,23 +165,36 @@ data_2026 <- read_csv(
 )|> dplyr::mutate(year = 2026,
                   education_year = 2022,
                   student_year = 2024)|>
-  dplyr::inner_join(pop_data_2021, by = "地域コード")
+  dplyr::inner_join(pop_data_2022, by = "地域コード")
 
-test_2025 <- read_csv(
-  "SSDSE-A-2025.csv",
+test_2026 <- read_csv(
+  "SSDSE-A-2026.csv",
   locale = locale(encoding = "CP932"),
   skip = 2
 )
-colnames(test_2025)
-test_2025 |>
+colnames(test_2026)
+test_2026 |>
   dplyr::filter(stringr::str_detect(市区町村, "ニセコ"))
-test_2025 |>
+test_2026 |>
   dplyr::filter(stringr::str_detect(市区町村, "ニセコ")) |>
   dplyr::select(地域コード, 市区町村)
 
-pop_data_2021 |>
+pop_data_2022 |>
   dplyr::filter(stringr::str_detect(地域コード, "R01395")) |>
   dplyr::select(地域コード)
+
+setdiff(
+  data_2026 |> dplyr::pull(地域コード),
+  data_2025 |> dplyr::pull(地域コード)
+)
+setdiff(
+  muni_complete_data |> dplyr::filter(new_year == 2019) |> dplyr::pull(region_code),
+  muni_complete_data |> dplyr::filter(new_year == 2020) |> dplyr::pull(region_code)
+)
+setdiff(
+  muni_complete_data |> dplyr::filter(new_year == 2019) |> dplyr::pull(region_code),
+  muni_complete_data |> dplyr::filter(new_year == 2022) |> dplyr::pull(region_code)
+)
 
 # # --- 年度ごとの設定を tibble で定義 ---
 # ssdse_config <- tibble::tribble(
