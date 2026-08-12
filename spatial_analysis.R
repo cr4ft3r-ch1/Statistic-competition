@@ -707,8 +707,37 @@ sar_model <- spatialreg::lagsarlm(
 summary(sar_model)
 summary(ols_model)
 
+muni_complete_data <- panel_data_muni |>
+  dplyr::arrange(new_year, .by_group = TRUE) |>
+  dplyr::group_by(prefecture,municipality) |>
+  dplyr::mutate(
+    lag_education_expenses_perstudents =
+      (
+        education_expenses_perstudents -
+          dplyr::lag(education_expenses_perstudents)
+      ) /
+      dplyr::lag(education_expenses_perstudents),
+    
+    lag_education_expenses_perstudents =
+      dplyr::coalesce(
+        lag_education_expenses_perstudents,
+        0
+      )
+  ) |>
+  dplyr::ungroup()
+
 #各年度のMoran's I を集計する
-#2020年
+# 2019年
+muni_data_2019 <- muni_complete_data |> 
+  dplyr::filter(new_year == 2019)
+muni_moran_test_result_2019 <- spdep::moran.test(
+  muni_data_2019$education_expenses_perstudents, 
+  listw = muni_listw, 
+  zero.policy = TRUE
+)
+
+print(muni_moran_test_result_2019)
+# 2020年
 muni_data_2020 <- muni_complete_data |> 
   dplyr::filter(new_year == 2020)
 muni_moran_test_result_2020 <- spdep::moran.test(
@@ -718,7 +747,7 @@ muni_moran_test_result_2020 <- spdep::moran.test(
 )
 
 print(muni_moran_test_result_2020)
-#2021年
+# 2021年
 muni_data_2021 <- muni_complete_data |> 
   dplyr::filter(new_year == 2021)
 muni_moran_test_result_2021 <- spdep::moran.test(
@@ -726,7 +755,7 @@ muni_moran_test_result_2021 <- spdep::moran.test(
   listw = muni_listw, 
   zero.policy = TRUE
 )
-
+# 2022年
 print(muni_moran_test_result_2021)
 
 muni_data_2022 <- muni_complete_data |> 
@@ -739,4 +768,287 @@ muni_moran_test_result_2022 <- spdep::moran.test(
 
 print(muni_moran_test_result_2022)
 
+# 2019-2020のラグに関してのMoran Test
+test_data_muni_1 <- muni_complete_data |>
+  dplyr::filter(new_year == 2020)
 
+moran_test_result_2020 <- spdep::moran.test(
+  test_data_muni_1$lag_education_expenses_perstudents,
+  listw =muni_listw,
+  zero.policy = TRUE
+)
+print(moran_test_result_2020)
+
+# 2020-2021の変化率に関してのMoran Test
+test_data_muni_2 <- muni_complete_data |>
+  dplyr::filter(new_year == 2021)
+
+moran_test_result_2021 <- spdep::moran.test(
+  test_data_muni_2$lag_education_expenses_perstudents,
+  listw = muni_listw,
+  zero.policy = TRUE
+)
+print(moran_test_result_2021)
+
+# 2021-2022の変化率に関してのMoran Test
+test_data_muni_3 <- muni_complete_data |>
+  dplyr::filter(new_year == 2022)
+
+moran_test_result_2022 <- spdep::moran.test(
+  test_data_muni_3$lag_education_expenses_perstudents,
+  listw = muni_listw,
+  zero.policy = TRUE
+)
+print(moran_test_result_2022)
+
+# 各年度のlocal Moran's I \
+# 2019
+muni_local_moran_result_2019 <- spdep::localmoran(
+  muni_data_2019$education_expenses_perstudents,
+  listw = muni_listw,
+  zero.policy = TRUE
+)
+lisa_result_2019 <- data.frame(
+   municipality = test_data_muni_1$municipality,
+    Ii = muni_local_moran_result_2019[, "Ii"],
+    Z_Ii = muni_local_moran_result_2019[, "Z.Ii"],
+    p_value = muni_local_moran_result_2019[, "Pr(z != E(Ii))"],
+    cluster = attr(muni_local_moran_result_2019, "quadr")[, "mean"]
+  )
+  lisa_result_2019 |>
+    filter(p_value < 0.05)
+  
+# 各年度の変化率についてlocal Moran's I
+# 2019-20
+Growth_muni_local_moran_result_2019 <- spdep::localmoran(
+   test_data_muni_1$lag_education_expenses_perstudents,
+    listw = muni_listw,
+    zero.policy = TRUE
+  )
+Growth_lisa_result_2019 <- data.frame(
+    municipality = test_data_muni_1$municipality,
+    Ii = Growth_muni_local_moran_result_2019[, "Ii"],
+    Z_Ii = Growth_muni_local_moran_result_2019[, "Z.Ii"],
+    p_value = Growth_muni_local_moran_result_2019[, "Pr(z != E(Ii))"],
+    cluster = attr(Growth_muni_local_moran_result_2019, "quadr")[, "mean"]
+  )
+Growth_lisa_result_2019 |>
+    filter(p_value < 0.05)
+# 2020-21
+Growth_muni_local_moran_result_2020 <- spdep::localmoran(
+  test_data_muni_2$lag_education_expenses_perstudents,
+  listw = muni_listw,
+  zero.policy = TRUE
+)
+Growth_lisa_result_2020 <- data.frame(
+  municipality = test_data_muni_2$municipality,
+  Ii = Growth_muni_local_moran_result_2020[, "Ii"],
+  Z_Ii = Growth_muni_local_moran_result_2020[, "Z.Ii"],
+  p_value = Growth_muni_local_moran_result_2020[, "Pr(z != E(Ii))"],
+  cluster = attr(Growth_muni_local_moran_result_2020, "quadr")[, "mean"]
+)
+Growth_lisa_result_2020 |>
+  filter(p_value < 0.05)
+# 2021-22
+Growth_muni_local_moran_result_2021 <- spdep::localmoran(
+  test_data_muni_3$lag_education_expenses_perstudents,
+  listw = muni_listw,
+  zero.policy = TRUE
+)
+Growth_lisa_result_2021 <- data.frame(
+  municipality = test_data_muni_3$municipality,
+  Ii = Growth_muni_local_moran_result_2021[, "Ii"],
+  Z_Ii = Growth_muni_local_moran_result_2021[, "Z.Ii"],
+  p_value = Growth_muni_local_moran_result_2021[, "Pr(z != E(Ii))"],
+  cluster = attr(Growth_muni_local_moran_result_2021, "quadr")[, "mean"]
+)
+Growth_lisa_result_2021 |>
+  filter(p_value < 0.05)
+# コロプレス図で描画
+# 2019-20
+Growth_lisa_result_2019 <- data.frame(
+  region_code  = test_data_muni_1$region_code,  # ▲ この1行を追加
+  municipality = test_data_muni_1$municipality,
+  Ii           = Growth_muni_local_moran_result_2019[, "Ii"],
+  Z_Ii         = Growth_muni_local_moran_result_2019[, "Z.Ii"],
+  p_value      = Growth_muni_local_moran_result_2019[, "Pr(z != E(Ii))"],
+  cluster      = attr(Growth_muni_local_moran_result_2019, "quadr")[, "mean"]
+)
+
+# 1. 空間データとLISA結果の結合・ラベル処理
+# ※ map_data_muni_all は全国のsfオブジェクト（ポリゴン）を想定
+lisa_map_2019 <- map_data_muni_all |>
+  # LISA結果を結合（ここではmunicipalityをキーとしているが、region_code推奨）
+  dplyr::left_join(Growth_lisa_result_2019, by = "region_code") |>
+  dplyr::mutate(
+    # p値に基づいて地図上のラベルを再分類する
+    plot_cluster = dplyr::case_when(
+      is.na(p_value) ~ "No Data",           # データ欠損
+      p_value >= 0.05 ~ "Not Significant",  # 有意でない地域
+      TRUE ~ as.character(cluster)          # 有意な地域（HH, LL, HL, LH）
+    ),
+    # 凡例の順番を固定し、色がずれるのを防ぐために因子化
+    plot_cluster = factor(
+      plot_cluster, 
+      levels = c("High-High", "Low-Low", "High-Low", "Low-High", "Not Significant", "No Data")
+    )
+  )
+
+# 2. ggplot2によるコロプレス図（LISAマップ）の作成
+lisa_plot_1 <- ggplot(data = lisa_map_2019) +
+  # sfオブジェクトの描画。境界線は極細（0.1）にし、中身をクラスターで塗る
+  geom_sf(aes(fill = plot_cluster), color = "black", size = 0.1) +
+  
+  # クラスターに応じた色の手動設定（学術標準カラー）
+  scale_fill_manual(
+    values = c(
+      "High-High" = "red",
+      "Low-Low"   = "blue",
+      "High-Low"  = "pink",
+      "Low-High"  = "skyblue",
+      "Not Significant" = "white",
+      "No Data"   = "gray80"
+    ),
+    # 使われていないクラスター（例：HLがない場合）のエラーを防ぐ
+    drop = FALSE, 
+    name = "LISA Cluster\n(p < 0.05)"
+  ) +
+  
+  # 地図用に背景や不要な軸（経度緯度）を消去
+  theme_void() + 
+  
+  # タイトル等の設定
+  labs(
+    title = "Local Moran's I (LISA) Map - 2019",
+    subtitle = "一人当たり教育費変化率におけるヤードスティック競争の局所的集積",
+    caption = "※有意水準5%で色分け"
+  )
+
+# 描画の実行
+print(lisa_plot_1)
+
+# 2020-21
+# LISAの結果をデータフレームにまとめる際に、region_codeを追加する
+Growth_lisa_result_2020 <- data.frame(
+  region_code  = test_data_muni_2$region_code,  # ▲ この1行を追加
+  municipality = test_data_muni_2$municipality,
+  Ii           = Growth_muni_local_moran_result_2020[, "Ii"],
+  Z_Ii         = Growth_muni_local_moran_result_2020[, "Z.Ii"],
+  p_value      = Growth_muni_local_moran_result_2020[, "Pr(z != E(Ii))"],
+  cluster      = attr(Growth_muni_local_moran_result_2020, "quadr")[, "mean"]
+)
+
+# 1. 空間データとLISA結果の結合・ラベル処理
+# ※ map_data_muni_all は全国のsfオブジェクト（ポリゴン）を想定
+lisa_map_2020 <- map_data_muni_all |>
+  # LISA結果を結合（ここではmunicipalityをキーとしているが、region_code推奨）
+  dplyr::left_join(Growth_lisa_result_2020, by = "region_code") |>
+  dplyr::mutate(
+    # p値に基づいて地図上のラベルを再分類する
+    plot_cluster = dplyr::case_when(
+      is.na(p_value) ~ "No Data",           # データ欠損
+      p_value >= 0.05 ~ "Not Significant",  # 有意でない地域
+      TRUE ~ as.character(cluster)          # 有意な地域（HH, LL, HL, LH）
+    ),
+    # 凡例の順番を固定し、色がずれるのを防ぐために因子化
+    plot_cluster = factor(
+      plot_cluster, 
+      levels = c("High-High", "Low-Low", "High-Low", "Low-High", "Not Significant", "No Data")
+    )
+  )
+
+# 2. ggplot2によるコロプレス図（LISAマップ）の作成
+lisa_plot_2 <- ggplot(data = lisa_map_2020) +
+  # sfオブジェクトの描画。境界線は極細（0.1）にし、中身をクラスターで塗る
+  geom_sf(aes(fill = plot_cluster), color = "black", size = 0.1) +
+  
+  # クラスターに応じた色の手動設定（学術標準カラー）
+  scale_fill_manual(
+    values = c(
+      "High-High" = "red",
+      "Low-Low"   = "blue",
+      "High-Low"  = "pink",
+      "Low-High"  = "skyblue",
+      "Not Significant" = "white",
+      "No Data"   = "gray80"
+    ),
+    # 使われていないクラスター（例：HLがない場合）のエラーを防ぐ
+    drop = FALSE, 
+    name = "LISA Cluster\n(p < 0.05)"
+  ) +
+  
+  # 地図用に背景や不要な軸（経度緯度）を消去
+  theme_void() + 
+  
+  # タイトル等の設定
+  labs(
+    title = "Local Moran's I (LISA) Map - 2021",
+    subtitle = "一人当たり教育費変化率におけるヤードスティック競争の局所的集積",
+    caption = "※有意水準5%で色分け"
+  )
+
+# 描画の実行
+print(lisa_plot_2)
+
+# 2021-22
+# LISAの結果をデータフレームにまとめる際に、region_codeを追加する
+Growth_lisa_result_2021 <- data.frame(
+  region_code  = test_data_muni_3$region_code,  # ▲ この1行を追加
+  municipality = test_data_muni_3$municipality,
+  Ii           = Growth_muni_local_moran_result_2021[, "Ii"],
+  Z_Ii         = Growth_muni_local_moran_result_2021[, "Z.Ii"],
+  p_value      = Growth_muni_local_moran_result_2021[, "Pr(z != E(Ii))"],
+  cluster      = attr(Growth_muni_local_moran_result_2021, "quadr")[, "mean"]
+)
+
+# 1. 空間データとLISA結果の結合・ラベル処理
+# ※ map_data_muni_all は全国のsfオブジェクト（ポリゴン）を想定
+lisa_map_2021 <- map_data_muni_all |>
+  # LISA結果を結合（ここではmunicipalityをキーとしているが、region_code推奨）
+  dplyr::left_join(Growth_lisa_result_2021, by = "region_code") |>
+  dplyr::mutate(
+    # p値に基づいて地図上のラベルを再分類する
+    plot_cluster = dplyr::case_when(
+      is.na(p_value) ~ "No Data",           # データ欠損
+      p_value >= 0.05 ~ "Not Significant",  # 有意でない地域
+      TRUE ~ as.character(cluster)          # 有意な地域（HH, LL, HL, LH）
+    ),
+    # 凡例の順番を固定し、色がずれるのを防ぐために因子化
+    plot_cluster = factor(
+      plot_cluster, 
+      levels = c("High-High", "Low-Low", "High-Low", "Low-High", "Not Significant", "No Data")
+    )
+  )
+
+# 2. ggplot2によるコロプレス図（LISAマップ）の作成
+lisa_plot_3 <- ggplot(data = lisa_map_2021) +
+  # sfオブジェクトの描画。境界線は極細（0.1）にし、中身をクラスターで塗る
+  geom_sf(aes(fill = plot_cluster), color = "black", size = 0.1) +
+  
+  # クラスターに応じた色の手動設定（学術標準カラー）
+  scale_fill_manual(
+    values = c(
+      "High-High" = "red",
+      "Low-Low"   = "blue",
+      "High-Low"  = "pink",
+      "Low-High"  = "skyblue",
+      "Not Significant" = "white",
+      "No Data"   = "gray80"
+    ),
+    # 使われていないクラスター（例：HLがない場合）のエラーを防ぐ
+    drop = FALSE, 
+    name = "LISA Cluster\n(p < 0.05)"
+  ) +
+  
+  # 地図用に背景や不要な軸（経度緯度）を消去
+  theme_void() + 
+  
+  # タイトル等の設定
+  labs(
+    title = "Local Moran's I (LISA) Map - 2021",
+    subtitle = "一人当たり教育費変化率におけるヤードスティック競争の局所的集積",
+    caption = "※有意水準5%で色分け"
+  )
+
+# 描画の実行
+print(lisa_plot_3)

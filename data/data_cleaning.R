@@ -583,6 +583,25 @@ diff_data <- panel_data_pre |>
   # 3. グループ化を解除して安全な状態に戻す
   dplyr::ungroup()
 
+# 市区町村単位で差分を取ったデータを作る
+muni_complete_data <- panel_data_muni |>
+  dplyr::arrange(new_year, .by_group = TRUE) |>
+  dplyr::group_by(prefecture,municipality) |>
+  dplyr::mutate(
+    lag_education_expenses_perstudents =
+      (
+       education_expenses_perstudents -
+          dplyr::lag(education_expenses_perstudents)
+      ) /
+      dplyr::lag(education_expenses_perstudents),
+    
+    lag_education_expenses_perstudents =
+      dplyr::coalesce(
+        lag_education_expenses_perstudents,
+        0
+      )
+  ) |>
+  dplyr::ungroup()
 
 
 
