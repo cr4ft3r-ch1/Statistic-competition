@@ -271,6 +271,20 @@ data_2026 <- readr::read_csv(
                   student_year = 2024)|>
   dplyr::inner_join(pop_data_2022, by = "地域コード")
 
+fits_m_list <- readr::read_csv(
+  "FITS-M-List.csv",
+  skip = 1,
+  locale = readr::locale(encoding = "CP932"),
+  show_col_types = FALSE
+)|>
+  dplyr::mutate(
+    # 団体コード（6桁）の「1文字目から5文字目まで」を抽出し、先頭に"R"を付ける
+    "region_code" = paste0("R", stringr::str_sub(`団体コード`, 1, 5))
+  )|>
+  dplyr::select(
+    "region_code",
+    "classification" = `区分`
+  )
 
 
 
@@ -439,6 +453,8 @@ f_muni <- function(x) {
 #  f_muni()
 panel_data_muni <- bind_rows(data_2019_merged, data_2020_merged, data_2021_merged, data_2022_merged) |> 
   f_muni()
+
+panel_data_muni <- panel_data_muni |> dplyr::left_join(fits_m_list, by ="region_code")
 # 県で分ける
 # 市区町村データ → 県単位データ
 panel_data_pre <- panel_data_muni |>
