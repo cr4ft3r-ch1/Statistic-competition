@@ -755,9 +755,9 @@ muni_moran_test_result_2021 <- spdep::moran.test(
   listw = muni_listw, 
   zero.policy = TRUE
 )
-# 2022年
-print(muni_moran_test_result_2021)
 
+print(muni_moran_test_result_2021)
+# 2022年
 muni_data_2022 <- muni_complete_data |> 
   dplyr::filter(new_year == 2022)
 muni_moran_test_result_2022 <- spdep::moran.test(
@@ -1052,3 +1052,6 @@ lisa_plot_3 <- ggplot(data = lisa_map_2021) +
 
 # 描画の実行
 print(lisa_plot_3)
+
+
+

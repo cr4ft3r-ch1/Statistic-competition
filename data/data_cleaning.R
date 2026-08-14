@@ -396,7 +396,11 @@ f_muni <- function(x) {
       junior_high_school_teachers = `中学校教員数`,
       junior_high_school_students = `中学校生徒数`,
       high_school_count = `高等学校数`,
-      high_school_students = `高等学校生徒数`
+      high_school_students = `高等学校生徒数`,
+      compulsory_school_count = 義務教育学校数,
+      compulsory_school_teachers = 義務教育学校教員数,
+      compulsory_school_students_lower = 義務教育学校前期課程児童数,
+      compulsory_school_students_upper = 義務教育学校後期課程生徒数
     ) |> 
     # summariseを削除し、直接mutateで指標を計算する
     dplyr::mutate(

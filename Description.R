@@ -200,50 +200,7 @@ education_perstudent_vs_total_by_region2 <-ggplot2::ggplot()+
                                     color =region) )+ 
   facet_wrap( ~ region )
 plot(education_perstudent_vs_total_by_region2)
-# コロプレス図に描画
-# 日本地図データ取得
-japan_map <- rnaturalearth::ne_states(
-  country = "japan",
-  scale = 50,
-  returnclass = "sf"
-)
 
-# 都道府県名を合わせる
-japan_map <- japan_map |>
-  dplyr::rename(
-    prefecture = name_ja
-  )
-
-# データ結合
-japan_map_data <- japan_map |>
-  dplyr::left_join(
-    map_data,
-    by = "prefecture"
-  )
-
-# コロプレス図
-education_map <- ggplot2::ggplot(
-  japan_map_data
-) +
-  ggplot2::geom_sf(
-    ggplot2::aes(
-      fill = education_ratio
-    ),
-    color = "black",
-    linewidth = 0.2
-  ) +
-  ggplot2::scale_fill_viridis_c(
-    option = "plasma",
-    labels = scales::percent
-  ) +
-  ggplot2::labs(
-    title = "Prefectural Education Expenditure Ratio",
-    fill = "Education\nRatio"
-  ) +
-  ggplot2::theme_minimal()
-
-education_map
-#いったん諦め
 
 
 
