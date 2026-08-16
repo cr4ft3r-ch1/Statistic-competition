@@ -294,3 +294,107 @@ summary(model_teacher_2)
 model_teacher_3 <- fixest::feols(pre_teacher_perstudents ~ log(pre_population) + pre_mean_ordinary_balance_ratio | new_year, data = panel_data_pre)
 summary(model_teacher_3)
 
+
+# 市区町村単位の分析
+pooled_0 <- estimatr::lm_robust(
+  data = panel_data_muni,
+  education_expenses_perstudents ~ log(population),
+  clusters = region_code,
+  se_type = "stata"
+)
+summary(pooled_0)
+
+
+pooled_1 <- estimatr::lm_robust(
+  data = panel_data_muni,
+  education_expenses_perstudents ~ log(population)+ designated_dummy,
+  clusters = region_code,
+  se_type = "stata"
+)
+summary(pooled_1)
+
+pooled_2 <- estimatr::lm_robust(
+  data = panel_data_muni,
+  education_expenses_perstudents ~ log(population)+ designated_dummy + metro_dummy,
+  clusters = region_code,
+  se_type = "stata"
+)
+summary(pooled_2)
+
+pooled_3 <- estimatr::lm_robust(
+  data = panel_data_muni,
+  education_expenses_perstudents ~ log(population)+ designated_dummy + metro_dummy + local_tax_perpop,
+  clusters = region_code,
+  se_type = "stata"
+)
+summary(pooled_3)
+
+pooled_4 <- estimatr::lm_robust(
+  data = panel_data_muni,
+  education_expenses_perstudents ~ log(population)+ designated_dummy + metro_dummy + local_tax_perpop + ordinary_balance_ratio,
+  clusters = region_code,
+  se_type = "stata"
+)
+summary(pooled_4)
+
+pooled_5 <- estimatr::lm_robust(
+  data = panel_data_muni,
+  education_expenses_perstudents ~ log(population)+ designated_dummy + metro_dummy + local_tax_perpop + ordinary_balance_ratio + teacher_perstudents,
+  clusters = region_code,
+  se_type = "stata"
+)
+summary(pooled_5)
+
+
+modelsummary(
+  list(
+    "pooled_0" = pooled_0,
+    "pooled_1" = pooled_1,
+    "pooled_2" = pooled_2,
+    "pooled_3" = pooled_3,
+    "pooled_4" = pooled_4
+  )
+)
+
+vif_model5 <- lm(
+  education_expenses_perstudents ~
+    log(population) +
+    designated_dummy +
+    metro_dummy +
+    local_tax_perpop +
+    ordinary_balance_ratio +
+    teacher_perstudents,
+  data = panel_data_muni
+)
+
+car::vif(vif_model5)
+
+
+pooled_5_log <- estimatr::lm_robust(
+  data = panel_data_muni,
+  log(education_expenses_perstudents) ~ log(population) + designated_dummy + metro_dummy +
+    log(local_tax_perpop) + ordinary_balance_ratio + log(teacher_perstudents),
+  clusters = region_code)
+summary(pooled_5_log)
+
+pooled_5_decomp <- estimatr::lm_robust(
+  data = panel_data_muni,
+  log(education_expenses_perstudents) ~
+    log(population) +
+    designated_dummy +
+    metro_dummy +
+    log(local_tax_perpop) +
+    ordinary_balance_ratio +
+    log(teacher_number) +
+    log(student_number),
+  clusters = region_code,
+  se_type = "stata"
+)
+summary(pooled_5_decomp)
+
+# 県単位の分析
+pre_pooled_1 <- estimatr::lm_robust(data = panel_data_pre, pre_education_expenses_perstudents ~ log(pre_population))
+summary(pre_pooled_1)
+
+pre_pooled_2 <- estimatr::lm_robust(data = panel_data_pre, pre_education_expenses_perstudents ~ log(pre_population) + )
+summary(pre_pooled_1)

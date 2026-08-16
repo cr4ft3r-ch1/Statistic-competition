@@ -435,7 +435,11 @@ f_muni <- function(x) {
         prefecture %in% c("愛知県", "岐阜県", "三重県") ~ "中京圏",
         prefecture %in% c("茨城県", "栃木県", "群馬県", "滋賀県", "和歌山県", "静岡県") ~ "都市圏近郊",
         TRUE ~ "地方圏"
-      )
+      ),
+      metro_dummy = dplyr::case_when(
+        metro_area %in% "地方圏" ~ 0,
+        TRUE ~ 1
+          )
     ) |>
     dplyr::relocate(metro_area, .after = region) |> 
     dplyr::mutate(
@@ -444,8 +448,9 @@ f_muni <- function(x) {
         NA_real_,
         education_expense / (student_number)
     ),
-    teacher_perstudents = teacher_number / student_number
-    ) 
+    teacher_perstudents = teacher_number / student_number,
+    local_tax_perpop = local_tax / population
+    )
 }
 
 # 縦方向への結合後に、整形関数を一括適用する
@@ -454,7 +459,13 @@ f_muni <- function(x) {
 panel_data_muni <- bind_rows(data_2019_merged, data_2020_merged, data_2021_merged, data_2022_merged) |> 
   f_muni()
 
-panel_data_muni <- panel_data_muni |> dplyr::left_join(fits_m_list, by ="region_code")
+panel_data_muni <- panel_data_muni |> dplyr::left_join(fits_m_list, by ="region_code") |> 
+  dplyr::mutate(
+    designated_dummy = dplyr::case_when(
+  classification %in% "政令指定都市" ~ 1,
+  TRUE ~ 0
+    )
+  )
 # 県で分ける
 # 市区町村データ → 県単位データ
 panel_data_pre <- panel_data_muni |>
@@ -496,7 +507,8 @@ panel_data_pre <- panel_data_muni |>
       pre_student_number == 0,
       NA_real_,
       pre_teacher_number / pre_student_number
-    )
+    ),
+    pre_local_tax_perpop = pre_local_tax / pre_population
   ) |>
   dplyr::mutate(
     region = dplyr::case_when(
