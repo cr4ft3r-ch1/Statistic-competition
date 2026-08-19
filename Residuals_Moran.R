@@ -496,7 +496,7 @@ moran_I_table
 # 空間自己回帰モデル（SAR）の推計
 # lagsarlm関数を用いて、被説明変数に空間ラグを組み込む
 sar_model <- spatialreg::lagsarlm(
-  log(education_expenses_perstudents) ~ log(population) + ordinary_balance_ratio,
+  log(education_expenses_perstudents) ~ log(population) + ordinary_balance_ratio + log(local_tax_perpop),
   data = muni_clean_panel,
   listw = muni_listw,
   zero.policy = TRUE
@@ -506,53 +506,70 @@ sar_model <- spatialreg::lagsarlm(
 summary(sar_model)
 
 
-# ① 自治体数
-n_distinct(muni_clean_panel$region_code)
-
-# ② Wのサイズ
-length(muni_listw$neighbours)
-dim(spdep::listw2mat(muni_listw))
-
-# ③ パネルの観測数
-nrow(muni_clean_panel)
-
-# ④ 各自治体が4年間存在するか
-table(table(muni_clean_panel$region_code))
-
-# ⑤ 欠損
-muni_clean_panel |>
-  summarise(
-    y_na = sum(is.na(education_expenses_perstudents)),
-    pop_na = sum(is.na(population)),
-    balance_na = sum(is.na(ordinary_balance_ratio)),
-    region_na = sum(is.na(region_code)),
-    year_na = sum(is.na(new_year))
-  )
-
-# ⑥ Wの自治体ID
-head(muni_listw$region.id)
-
-# ⑦ データの自治体ID
-head(unique(muni_clean_panel$region_code))
-
-# ⑧ 孤立自治体
-sum(spdep::card(muni_listw$neighbours) == 0)
-
-muni_clean_panel <- muni_clean_panel |>arrange(region_code, new_year)
-length(muni_listw$neighbours)
-length(muni_listw$weights)
+# # ① 自治体数
+# n_distinct(muni_clean_panel$region_code)
+# 
+# # ② Wのサイズ
+# length(muni_listw$neighbours)
+# dim(spdep::listw2mat(muni_listw))
+# 
+# # ③ パネルの観測数
+# nrow(muni_clean_panel)
+# 
+# # ④ 各自治体が4年間存在するか
+# table(table(muni_clean_panel$region_code))
+# 
+# # ⑤ 欠損
+# muni_clean_panel |>
+#   summarise(
+#     y_na = sum(is.na(education_expenses_perstudents)),
+#     pop_na = sum(is.na(population)),
+#     balance_na = sum(is.na(ordinary_balance_ratio)),
+#     region_na = sum(is.na(region_code)),
+#     year_na = sum(is.na(new_year))
+#   )
+# 
+# # ⑥ Wの自治体ID
+# head(muni_listw$region.id)
+# 
+# # ⑦ データの自治体ID
+# head(unique(muni_clean_panel$region_code))
+# 
+# # ⑧ 孤立自治体
+# sum(spdep::card(muni_listw$neighbours) == 0)
+# 
+# muni_clean_panel <- muni_clean_panel |>arrange(region_code, new_year)
+# length(muni_listw$neighbours)
+# length(muni_listw$weights)
+# listw2mat(muni_listw) |> dim()
+# 
+# muni_clean_panel <- muni_clean_panel |>
+#   arrange(region_code, new_year)
+# 
+# # 自治体IDの順番
+# muni_ids <- muni_clean_panel |>
+#   distinct(region_code) |>
+#   arrange(region_code) |>
+#   pull(region_code)
+# 
+# length(muni_ids)
+# muni_listw$region.id <- muni_ids
+# 
+# head(muni_listw$region.id)
+# 1741
 
 # 3. 空間パネル自己回帰モデル（SAR）の推計
 # spml関数を用いて、双方向固定効果（個体・時間）を統制しつつ空間ラグを組み込む
 sar_panel_model <- splm::spml(
-  formula = log(education_expenses_perstudents) ~ log(population) + ordinary_balance_ratio,
+  formula = log(education_expenses_perstudents) ~ log(population) + ordinary_balance_ratio + log(local_tax_perpop),
   data = muni_clean_panel,
   index = c("region_code", "new_year"),
   listw = muni_listw,      # ステップ1で作成したN×Nの重み行列をそのまま投入
   model = "within",            # 個体固定効果モデル（Fixed Effects）
   effect = "twoways",          # 空間（個体）と時間の双方向固定効果を指定
   spatial.error = "none",      # 空間誤差モデルではなく
-  lag = TRUE                   # 空間ラグモデル（SAR）を指定
+  lag = TRUE,                   # 空間ラグモデル（SAR）を指定
+  zero.policy = TRUE
 )
 
 # 結果の表示

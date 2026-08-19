@@ -559,3 +559,18 @@ moran_I_table <- moran_results |>
 
 moran_I_table
 
+sar_panel_model <- splm::spml(
+  formula = log(education_expenses_perstudents) ~ log(population) + ordinary_balance_ratio + log(local_tax_perpop),
+  data = muni_clean_panel,
+  index = c("region_code", "new_year"),
+  listw = fits_listw,      # ステップ1で作成したN×Nの重み行列をそのまま投入
+  model = "within",            # 個体固定効果モデル（Fixed Effects）
+  effect = "twoways",          # 空間（個体）と時間の双方向固定効果を指定
+  spatial.error = "none",      # 空間誤差モデルではなく
+  lag = TRUE,                   # 空間ラグモデル（SAR）を指定
+  zero.policy = TRUE
+)
+
+# 結果の表示
+# 下部に出力される「Spatial autoregressive coefficient (lambda)」がヤードスティック効果を示す
+summary(sar_panel_model)
