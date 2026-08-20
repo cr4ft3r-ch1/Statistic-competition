@@ -1053,5 +1053,22 @@ lisa_plot_3 <- ggplot(data = lisa_map_2021) +
 # 描画の実行
 print(lisa_plot_3)
 
-
+# FITS-Mのコロプレス図での描画
+ggplot2::ggplot(data = muni_complete_data) +
+  ggplot2::geom_sf(
+    ggplot2::aes(fill = classification),
+    color = "black",
+    linewidth = 0.1
+  ) +
+  ggplot2::scale_fill_viridis_d(
+    option = "plasma",
+    name = "FITS-Mでの区分"
+  ) +
+  ggplot2::theme_void() +
+  ggplot2::labs(
+    title = "FITS-Mでの区分の空間的分布"
+  ) +
+  ggplot2::theme(
+    legend.position = "bottom"
+  )
 
