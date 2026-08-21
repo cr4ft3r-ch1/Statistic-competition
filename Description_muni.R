@@ -72,11 +72,6 @@ ggplot2::ggplot(panel_data_muni) +
     plot.title = ggplot2::element_text(hjust = 0.5), 
     axis.title.x = ggplot2::element_text(size = 12))
 
-
-
-
-
-
 # 時間固定効果を除去したトレンドを見る
 
 #　市区町村単位
