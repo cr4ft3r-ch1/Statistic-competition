@@ -70,7 +70,14 @@ calc_ols_moran <- function(df_year, listw_obj) {
       log(local_tax_perpop),
     data = df_year
   )
-
+  # estimatr::lm_robust(
+  #   data = df_year,
+  #   log(education_expenses_perstudents) ~ 
+  #     ordinary_balance_ratio + 
+  #     log(local_tax_perpop),,
+  #   clusters = region_code,
+  #   se_type = "stata"
+  # )
   moran_B <- spdep::moran.test(
     resid(mod_B),
     listw_obj,
@@ -105,6 +112,26 @@ ols_moran_results <- muni_clean_panel |>
 
 print(ols_moran_results)
 
+
+# mod_lm <- lm(
+#   log(education_expenses_perstudents) ~
+#     log(population) +
+#     ordinary_balance_ratio +
+#     log(local_tax_perpop),
+#   data = df_year
+# )
+# 
+# mod_robust <- estimatr::lm_robust(
+#   log(education_expenses_perstudents) ~
+#     log(population) +
+#     ordinary_balance_ratio +
+#     log(local_tax_perpop),
+#   data = df_year
+# )
+# 
+# max(abs(
+#   residuals(mod_lm) - mod_robust$residuals
+# ))
 
 
 # 年固定効果モデルに対する残差Moran's I

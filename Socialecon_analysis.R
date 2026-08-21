@@ -148,6 +148,7 @@ print(ols_moran_results)
 
 
 
+
 # 年固定効果モデルに対する残差Moran's I
 # 年固定効果
 model_year_fe <- fixest::feols(
