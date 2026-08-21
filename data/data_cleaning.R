@@ -1,13 +1,13 @@
-#install.packages("tidyverse")
-#install.packages("modelsummary")
-#install.packages("rnaturalearth")
-#install.packages("rnaturalearthdata")
-#install.packages("maps")
-#install.packages("GGally")
-#install.packages("fixest")
-#install.packages("plm")
-#install.packages("spdep")
-#install.packages("spatialreg")
+# install.packages("tidyverse")
+# install.packages("modelsummary")
+# install.packages("rnaturalearth")
+# install.packages("rnaturalearthdata")
+# install.packages("maps")
+# install.packages("GGally")
+# install.packages("fixest")
+# install.packages("plm")
+# install.packages("spdep")
+# install.packages("spatialreg")
 library(tidyverse)   
 library(modelsummary)
 library(rnaturalearth)
@@ -443,6 +443,7 @@ f_muni <- function(x) {
     ) |>
     dplyr::relocate(metro_area, .after = region) |> 
     dplyr::mutate(
+      education_expenses_perexpenditure = education_expense / total_expenditure,
       education_expenses_perstudents = if_else(
         student_number == 0, 
         NA_real_,
@@ -485,6 +486,7 @@ panel_data_pre <- panel_data_muni |>
         ) &
         -c(
           year,
+          education_expenses_perexpenditure,
           education_expenses_perstudents,
           teacher_perstudents
         ),
@@ -495,6 +497,11 @@ panel_data_pre <- panel_data_muni |>
     .groups = "drop"
   ) |>
   dplyr::mutate(
+    pre_education_expenses_perexpenditure = dplyr::if_else(
+      pre_student_number == 0,
+      NA_real_,
+      pre_education_expense / pre_total_expenditure
+    ),
     # 市区町村の教育費を合計してから、
     # 県全体の生徒数で割る
     pre_education_expenses_perstudents = dplyr::if_else(
