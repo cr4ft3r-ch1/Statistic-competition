@@ -110,7 +110,7 @@ print(ols_moran_results)
 # 年固定効果モデルに対する残差Moran's I
 # 年固定効果
 model_year_fe <- fixest::feols(
-  education_expenses_perstudents ~
+  log(education_expenses_perstudents) ~
     log(population) +
     ordinary_balance_ratio +
     log(local_tax_perpop)|
@@ -158,7 +158,7 @@ year_fe_moran_results
 
 # 2-way FEモデルに対する残差Moran's I
 model_twoway_fe <- fixest::feols(
-  education_expenses_perstudents ~
+  log(education_expenses_perstudents) ~
     log(population) +
     ordinary_balance_ratio +
     log(local_tax_perpop) |

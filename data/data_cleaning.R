@@ -212,6 +212,9 @@ data_2020 <- read_csv(
                   education_year = 2017,
                   student_year = 2018)|>
   dplyr::inner_join(pop_data_2017, by = "地域コード")
+
+
+
 data_2021 <- read_csv(
   "SSDSE-A-2021.csv",
   locale = readr::locale(encoding = "CP932"),
@@ -221,8 +224,6 @@ data_2021 <- read_csv(
                   education_year = 2018,
                   student_year = 2019) |>
    dplyr::inner_join(pop_data_2018, by = "地域コード")
-
-
 
 
 data_2022 <- read_csv(
