@@ -57,6 +57,7 @@ ggplot2::ggplot(panel_data_muni) +
     aes(x = local_tax_perpop),
     bins = 50
   )
+
 ggplot2::ggplot(panel_data_muni) +
   ggplot2::geom_histogram(
     aes(x = log(local_tax_perpop)),
