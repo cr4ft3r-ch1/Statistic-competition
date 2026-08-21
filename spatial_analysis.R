@@ -731,7 +731,7 @@ muni_complete_data <- panel_data_muni |>
 muni_data_2019 <- muni_complete_data |> 
   dplyr::filter(new_year == 2019)
 muni_moran_test_result_2019 <- spdep::moran.test(
-  muni_data_2019$education_expenses_perstudents, 
+  log(muni_data_2019$education_expenses_perstudents), 
   listw = muni_listw, 
   zero.policy = TRUE
 )
@@ -741,7 +741,7 @@ print(muni_moran_test_result_2019)
 muni_data_2020 <- muni_complete_data |> 
   dplyr::filter(new_year == 2020)
 muni_moran_test_result_2020 <- spdep::moran.test(
-  muni_data_2020$education_expenses_perstudents, 
+  log(muni_data_2020$education_expenses_perstudents), 
   listw = muni_listw, 
   zero.policy = TRUE
 )
@@ -751,7 +751,7 @@ print(muni_moran_test_result_2020)
 muni_data_2021 <- muni_complete_data |> 
   dplyr::filter(new_year == 2021)
 muni_moran_test_result_2021 <- spdep::moran.test(
-  muni_data_2021$education_expenses_perstudents, 
+  log(muni_data_2021$education_expenses_perstudents), 
   listw = muni_listw, 
   zero.policy = TRUE
 )
@@ -761,7 +761,7 @@ print(muni_moran_test_result_2021)
 muni_data_2022 <- muni_complete_data |> 
   dplyr::filter(new_year == 2022)
 muni_moran_test_result_2022 <- spdep::moran.test(
-  muni_data_2022$education_expenses_perstudents, 
+  log(muni_data_2022$education_expenses_perstudents), 
   listw = muni_listw, 
   zero.policy = TRUE
 )
@@ -804,7 +804,7 @@ print(moran_test_result_2022)
 # 各年度のlocal Moran's I \
 # 2019
 muni_local_moran_result_2019 <- spdep::localmoran(
-  muni_data_2019$education_expenses_perstudents,
+  log(muni_data_2019$education_expenses_perstudents),
   listw = muni_listw,
   zero.policy = TRUE
 )
@@ -1053,6 +1053,9 @@ lisa_plot_3 <- ggplot(data = lisa_map_2021) +
 # 描画の実行
 print(lisa_plot_3)
 
+
+
+
 # FITS-Mのコロプレス図での描画
 ggplot2::ggplot(data = muni_complete_data) +
   ggplot2::geom_sf(
@@ -1072,3 +1075,23 @@ ggplot2::ggplot(data = muni_complete_data) +
     legend.position = "bottom"
   )
 
+
+ggplot2::ggplot(data = muni_complete_data) +
+  ggplot2::geom_sf(
+    fill = "grey90",
+    color = "white",
+    linewidth = 0.05
+  ) +
+  ggplot2::geom_sf(
+    ggplot2::aes(color = classification),
+    fill = NA,
+    linewidth = 0.2
+  ) +
+  ggplot2::facet_wrap(~ classification) +
+  ggplot2::theme_void() +
+  ggplot2::labs(
+    title = "FITS-M区分別の自治体分布"
+  ) +
+  ggplot2::theme(
+    legend.position = "none"
+  )

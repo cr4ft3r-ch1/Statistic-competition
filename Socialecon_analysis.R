@@ -42,7 +42,7 @@ summary(fits_listw, zero.policy = TRUE)
 calc_global_moran <- function(df_year, listw_obj, year) {
   
   moran <- spdep::moran.test(
-    df_year$education_expenses_perstudents,
+    log(df_year$education_expenses_perstudents),
     listw_obj,
     zero.policy = TRUE
   )
