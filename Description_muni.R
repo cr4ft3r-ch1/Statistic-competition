@@ -20,6 +20,7 @@ ggplot2::ggplot(panel_data_muni) +
                                          
 
 
+
 #　生徒一人当たり教育費
 ggplot2::ggplot(panel_data_muni) +
   ggplot2::geom_histogram(
