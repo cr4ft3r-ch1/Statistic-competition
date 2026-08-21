@@ -17,9 +17,6 @@ ggplot2::ggplot(panel_data_muni) +
   ggplot2::theme(
     plot.title = ggplot2::element_text(hjust = 0.5), 
     axis.title.x = ggplot2::element_text(size = 12))
-                                         
-
-
 
 #　生徒一人当たり教育費
 ggplot2::ggplot(panel_data_muni) +

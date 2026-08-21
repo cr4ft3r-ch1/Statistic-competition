@@ -61,9 +61,6 @@ ggplot2::ggplot(panel_data_pre) +
   ggplot2::facet_wrap( ~ new_year)
 
 
-
-
-
 # 2. グラフの作成(折れ線グラフ)
 ggplot2::ggplot(panel_data_pre, aes(x = new_year, y = log(pre_education_expenses_perstudents), color = prefecture)) +
   geom_line() +

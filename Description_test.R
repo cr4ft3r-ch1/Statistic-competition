@@ -73,12 +73,7 @@ education_perstudent_vs_total_by_region2 <-ggplot2::ggplot()+
   facet_wrap( ~ region )
 plot(education_perstudent_vs_total_by_region2)
 
-# # 2. グラフの作成(折れ線グラフ)
-# ggplot2::ggplot(panel_data_muni, aes(x = year, y = log(education_expenses_perstudents), color = prefecture)) +
-#   geom_line() +
-#   geom_point() +
-#   theme_minimal() +
-#   labs(title = "地方別の推移", x = "年度", y = "値")
+
 
 
 
