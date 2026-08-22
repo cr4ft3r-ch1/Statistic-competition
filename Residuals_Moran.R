@@ -183,6 +183,58 @@ year_fe_moran_results <- muni_clean_panel |>
 
 year_fe_moran_results
 
+# 自治体固定効果モデルに対する残差Moran's I
+# 自治体固定効果のみ
+model_muni_fe <- fixest::feols(
+  log(education_expenses_perstudents) ~
+    log(population) +
+    ordinary_balance_ratio +
+    log(local_tax_perpop) |
+    region_code,
+  data = muni_clean_panel
+)
+
+# 残差を保存
+muni_clean_panel <- muni_clean_panel |>
+  mutate(
+    muni_fe_residual = resid(model_muni_fe)
+  )
+
+
+# 自治体FEモデルに対する残差Moran's I
+calc_muni_fe_moran <- function(df_year, listw_obj) {
+  
+  moran <- spdep::moran.test(
+    df_year$muni_fe_residual,
+    listw_obj,
+    zero.policy = TRUE
+  )
+  
+  tibble(
+    `Municipality FE I` =
+      unname(moran$estimate["Moran I statistic"]),
+    `Municipality FE p-value` =
+      moran$p.value
+  )
+}
+
+
+# 年ごとにMoran's Iを計算
+muni_fe_moran_results <- muni_clean_panel |>
+  group_by(new_year) |>
+  nest() |>
+  mutate(
+    result = map(
+      data,
+      ~ calc_muni_fe_moran(.x, muni_listw)
+    )
+  ) |>
+  unnest(result) |>
+  select(-data)
+
+
+muni_fe_moran_results
+
 # 2-way FEモデルに対する残差Moran's I
 model_twoway_fe <- fixest::feols(
   log(education_expenses_perstudents) ~
@@ -235,6 +287,10 @@ moran_results <- ols_moran_results |>
     by = "new_year"
   ) |>
   left_join(
+    muni_fe_moran_results,
+    by = "new_year"
+  ) |> 
+  left_join(
     twoway_fe_moran_results,
     by = "new_year"
   )
@@ -247,6 +303,7 @@ moran_I_table <- moran_results |>
     `OLS Model A I`,
     `OLS Model B I`,
     `Year FE I`,
+    `Municipality FE I`,
     `2-way FE I`
   ) |>
   tidyr::pivot_longer(
@@ -262,263 +319,6 @@ moran_I_table <- moran_results |>
 moran_I_table
 
 
-
-
-# ============================================================
-# 生徒一人当たり教員数を含めなかった場合の残差に対するMorans I
-# ============================================================
-
-
-
-# 年固定効果モデルに対する残差Moran's I
-# 年固定効果
-model_year_fe <- fixest::feols(
-  education_expenses_perstudents ~
-    log(population) +
-    ordinary_balance_ratio  |
-    new_year,
-  data = muni_clean_panel
-)
-
-# 残差を保存
-muni_clean_panel <- muni_clean_panel |>
-  mutate(
-    year_fe_residual = resid(model_year_fe)
-  )
-
-
-calc_year_fe_moran <- function(df_year, listw_obj) {
-  
-  moran <- spdep::moran.test(
-    df_year$year_fe_residual,
-    listw_obj,
-    zero.policy = TRUE
-  )
-  
-  tibble(
-    `Year FE I` =
-      unname(moran$estimate["Moran I statistic"]),
-    `Year FE p-value` =
-      moran$p.value
-  )
-}
-
-year_fe_moran_results <- muni_clean_panel |>
-  group_by(new_year) |>
-  nest() |>
-  mutate(
-    result = map(
-      data,
-      ~ calc_year_fe_moran(.x, muni_listw)
-    )
-  ) |>
-  unnest(result) |>
-  select(-data)
-
-year_fe_moran_results
-
-# 2-way FEモデルに対する残差Moran's I
-model_twoway_fe <- fixest::feols(
-  education_expenses_perstudents ~
-    log(population) +
-    ordinary_balance_ratio |
-    region_code + new_year,
-  data = muni_clean_panel
-)
-
-# 残差を保存
-muni_clean_panel <- muni_clean_panel |>
-  mutate(
-    twoway_fe_residual = resid(model_twoway_fe)
-  )
-
-calc_twoway_fe_moran <- function(df_year, listw_obj) {
-  
-  moran <- spdep::moran.test(
-    df_year$twoway_fe_residual,
-    listw_obj,
-    zero.policy = TRUE
-  )
-  
-  tibble(
-    `2-way FE I` =
-      unname(moran$estimate["Moran I statistic"]),
-    `2-way FE p-value` =
-      moran$p.value
-  )
-}
-
-twoway_fe_moran_results <- muni_clean_panel |>
-  group_by(new_year) |>
-  nest() |>
-  mutate(
-    result = map(
-      data,
-      ~ calc_twoway_fe_moran(.x, muni_listw)
-    )
-  ) |>
-  unnest(result) |>
-  select(-data)
-
-twoway_fe_moran_results
-
-moran_results <- ols_moran_results |>
-  left_join(
-    year_fe_moran_results,
-    by = "new_year"
-  ) |>
-  left_join(
-    twoway_fe_moran_results,
-    by = "new_year"
-  )
-
-print(moran_results)
-
-moran_I_table <- moran_results |>
-  select(
-    new_year,
-    `OLS Model A I`,
-    # `OLS Model B I`,
-    `Year FE I`,
-    `2-way FE I`
-  ) |>
-  tidyr::pivot_longer(
-    cols = -new_year,
-    names_to = "Model",
-    values_to = "Moran's I"
-  ) |>
-  tidyr::pivot_wider(
-    names_from = new_year,
-    values_from = `Moran's I`
-  )
-
-moran_I_table
-
-
-#固定効果モデルのMoran's I
-model_year_fe <- fixest::feols(
-  log(education_expenses_perstudents) ~
-    log(population) +
-    ordinary_balance_ratio 
-  |
-    new_year,
-  data = panel_data_muni)
-
-
-# 残差を保存
-panel_data_muni <- panel_data_muni |>
-  mutate(
-    year_fe_residual = resid(model_year_fe)
-  )
-
-
-calc_year_fe_moran <- function(df_year, listw_obj) {
-  
-  moran <- spdep::moran.test(
-    df_year$year_fe_residual,
-    listw_obj,
-    zero.policy = TRUE
-  )
-  
-  tibble(
-    `Year FE I` =
-      unname(moran$estimate["Moran I statistic"]),
-    `Year FE p-value` =
-      moran$p.value
-  )
-}
-
-year_fe_moran_results <-panel_data_muni |>
-  group_by(new_year) |>
-  nest() |>
-  mutate(
-    result = map(
-      data,
-      ~ calc_year_fe_moran(.x, muni_listw)
-    )
-  ) |>
-  unnest(result) |>
-  select(-data)
-
-year_fe_moran_results
-
-# 2-way FEモデルに対する残差Moran's I
-model_twoway_fe <- fixest::feols(
-  log(education_expenses_perstudents) ~
-    log(population) +
-    ordinary_balance_ratio 
-   |
-    region_code + new_year,
-  data = panel_data_muni
-)
-
-# 残差を保存
-panel_data_muni <-panel_data_muni |>
-  mutate(
-    twoway_fe_residual = resid(model_twoway_fe)
-  )
-
-calc_twoway_fe_moran <- function(df_year, listw_obj) {
-  
-  moran <- spdep::moran.test(
-    df_year$twoway_fe_residual,
-    listw_obj,
-    zero.policy = TRUE
-  )
-  
-  tibble(
-    `2-way FE I` =
-      unname(moran$estimate["Moran I statistic"]),
-    `2-way FE p-value` =
-      moran$p.value
-  )
-}
-
-twoway_fe_moran_results <- panel_data_muni |>
-  group_by(new_year) |>
-  nest() |>
-  mutate(
-    result = map(
-      data,
-      ~ calc_twoway_fe_moran(.x, muni_listw)
-    )
-  ) |>
-  unnest(result) |>
-  select(-data)
-
-twoway_fe_moran_results
-
-moran_results <- ols_moran_results |>
-  left_join(
-    year_fe_moran_results,
-    by = "new_year"
-  ) |>
-  left_join(
-    twoway_fe_moran_results,
-    by = "new_year"
-  )
-
-print(moran_results)
-
-moran_I_table <- moran_results |>
-  select(
-    new_year,
-    `OLS Model A I`,
-    # `OLS Model B I`,
-    `Year FE I`,
-    `2-way FE I`
-  ) |>
-  tidyr::pivot_longer(
-    cols = -new_year,
-    names_to = "Model",
-    values_to = "Moran's I"
-  ) |>
-  tidyr::pivot_wider(
-    names_from = new_year,
-    values_from = `Moran's I`
-  )
-
-moran_I_table
 
 # 空間自己回帰モデル（SAR）の推計
 # lagsarlm関数を用いて、被説明変数に空間ラグを組み込む

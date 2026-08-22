@@ -285,6 +285,10 @@ modelsummary(
 muni_year_fixed <- fixest::feols(log(education_expenses_perstudents) ~ log(population)+ designated_dummy + metro_dummy + log(local_tax_perpop) + ordinary_balance_ratio | new_year, data = panel_data_muni)
 summary(muni_year_fixed)
 
+# 個体固定効果
+muni_fixed <- fixest::feols(log(education_expenses_perstudents) ~ log(population)+ designated_dummy + metro_dummy + log(local_tax_perpop) + ordinary_balance_ratio | region_code, data = panel_data_muni)
+summary(muni_fixed)
+
 # tw固定効果P1
 muni_tw_fixed_1 <- fixest::feols(log(education_expenses_perstudents) ~ log(population)| region_code + new_year, data = panel_data_muni)
 summary(muni_tw_fixed_1)
@@ -300,6 +304,7 @@ summary(muni_tw_fixed_3)
 modelsummary(
   list(
     "muni_year_fixed" = muni_year_fixed,
+    "muni_fixed"      = muni_fixed,
     "muni_tw_fixed_1" = muni_tw_fixed_1,
     "muni_tw_fixed_2" = muni_tw_fixed_2,
     "muni_tw_fixed_3" = muni_tw_fixed_3
