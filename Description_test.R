@@ -74,6 +74,7 @@ education_perstudent_vs_total_by_region2 <-ggplot2::ggplot()+
 plot(education_perstudent_vs_total_by_region2)
 
 
+# 3.2節の変数一覧に対応させ、日本語ラベルの列を作る
 
 
 

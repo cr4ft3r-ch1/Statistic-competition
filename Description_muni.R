@@ -35,6 +35,7 @@ ggplot2::ggplot(panel_data_muni) +
 
 
 
+summary(log(panel_data_muni$education_expenses_perstudents))
 ggplot2::ggplot(panel_data_muni) +
   ggplot2::geom_histogram(
     aes(x = log(education_expenses_perstudents)),
@@ -69,6 +70,65 @@ ggplot2::ggplot(panel_data_muni) +
   ggplot2::theme(
     plot.title = ggplot2::element_text(hjust = 0.5), 
     axis.title.x = ggplot2::element_text(size = 12))
+
+# 記述統計量作成
+
+desc_data <- panel_data_muni |>
+  dplyr::transmute(
+    "生徒数" = student_number,
+    "生徒一人当たり教育費" = education_expenses_perstudents,
+    "「教育費」" = log(education_expenses_perstudents),
+    "人口" = population,
+    "対数人口" = log(population),
+    "政令指定都市ダミー" = designated_dummy,
+    "都市圏ダミー" = metro_dummy,
+    "一人当たり地方税" = local_tax_perpop,
+    "「地方税」" = log(local_tax_perpop),
+    "経常収支比率" = ordinary_balance_ratio
+  )
+
+modelsummary::datasummary(
+  `生徒数` + `生徒一人当たり教育費` + `「教育費」` +
+    `人口` + `対数人口` +
+    `政令指定都市ダミー` + `都市圏ダミー` +
+    `一人当たり地方税` + `「地方税」` +
+    `経常収支比率`
+  ~ N + Mean + SD + Min + Median + Max,
+  data = desc_data,
+  fmt = 2,
+  title = "表1：記述統計量（市区町村単位パネル、2019〜2022年プール）"
+)
+
+# desc_data に new_year を追加（変数の書き方は表1と揃える）
+desc_data_year <- panel_data_muni |>
+  dplyr::transmute(
+    "年度" = new_year,
+    "生徒数" = student_number,
+    "生徒一人当たり教育費" = education_expenses_perstudents,
+    "「教育費」" = log(education_expenses_perstudents),
+    "人口" = population,
+    "対数人口" = log(population),
+    "政令指定都市ダミー" = designated_dummy,
+    "都市圏ダミー" = metro_dummy,
+    "一人当たり地方税" = local_tax_perpop,
+    "「地方税」" = log(local_tax_perpop),
+    "経常収支比率" = ordinary_balance_ratio
+  )
+
+modelsummary::datasummary(
+  (`生徒数` + `生徒一人当たり教育費` + `「教育費」` +
+     `人口` + `対数人口` +
+     `一人当たり地方税` + `「地方税」` +
+     `経常収支比率`)
+  ~ factor(`年度`) * (Mean + SD),
+  data = desc_data_year,
+  fmt = 2,
+  title = "表1補足：年別記述統計（市区町村単位）"
+)
+
+
+
+
 
 # 時間固定効果を除去したトレンドを見る
 
@@ -126,7 +186,7 @@ plot_before + plot_after
 # プールドOLS
 muni_pooled_0 <- estimatr::lm_robust(
   data = panel_data_muni,
-  education_expenses_perstudents ~ log(population),
+  log(education_expenses_perstudents) ~ log(population),
   clusters = region_code,
   se_type = "stata"
 )
