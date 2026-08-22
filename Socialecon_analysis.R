@@ -198,6 +198,58 @@ year_fe_moran_results <- muni_clean_panel |>
 
 year_fe_moran_results
 
+# 自治体固定効果モデルに対する残差Moran's I
+# 自治体固定効果のみ
+model_muni_fe <- fixest::feols(
+  log(education_expenses_perstudents) ~
+    log(population) +
+    ordinary_balance_ratio +
+    log(local_tax_perpop) |
+    region_code,
+  data = muni_clean_panel
+)
+
+# 残差を保存
+muni_clean_panel <- muni_clean_panel |>
+  mutate(
+    muni_fe_residual = resid(model_muni_fe)
+  )
+
+
+# 自治体FEモデルに対する残差Moran's I
+calc_muni_fe_moran <- function(df_year, listw_obj) {
+  
+  moran <- spdep::moran.test(
+    df_year$muni_fe_residual,
+    listw_obj,
+    zero.policy = TRUE
+  )
+  
+  tibble(
+    `Municipality FE I` =
+      unname(moran$estimate["Moran I statistic"]),
+    `Municipality FE p-value` =
+      moran$p.value
+  )
+}
+
+
+# 年ごとにMoran's Iを計算
+muni_fe_moran_results <- muni_clean_panel |>
+  group_by(new_year) |>
+  nest() |>
+  mutate(
+    result = map(
+      data,
+      ~ calc_muni_fe_moran(.x, fits_listw)
+    )
+  ) |>
+  unnest(result) |>
+  select(-data)
+
+
+muni_fe_moran_results
+
 # 2-way FEモデルに対する残差Moran's I
 model_twoway_fe <- fixest::feols(
   log(education_expenses_perstudents) ~
@@ -250,18 +302,23 @@ socialecon_moran_results <- ols_moran_results |>
     by = "new_year"
   ) |>
   left_join(
+    muni_fe_moran_results,
+    by = "new_year"
+  ) |> 
+  left_join(
     twoway_fe_moran_results,
     by = "new_year"
   )
 
 print(socialecon_moran_results)
 
-moran_I_table <- socialecon_moran_results |>
+socialecon_moran_I_table <- socialecon_moran_results |>
   select(
     new_year,
     `OLS Model A I`,
     `OLS Model B I`,
     `Year FE I`,
+    `Municipality FE I`,
     `2-way FE I`
   ) |>
   tidyr::pivot_longer(
@@ -274,7 +331,7 @@ moran_I_table <- socialecon_moran_results |>
     values_from = `Moran's I`
   )
 
-moran_I_table
+socialecon_moran_I_table
 
 
 # calc_global_moran_mc <- function(df_year, listw_obj, nsim = 999) {
